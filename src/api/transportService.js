@@ -185,7 +185,7 @@ export const getApplicationById = async (id) => {
 };
 
 export const reviewApplication = async (id, payload) => {
-  const res = await API.patch(`admin/agency/applications/${id}`, payload);
+  const res = await API.post(`admin/agency/review/${id}`, payload);
   return unwrapResponse(res);
 };
 
@@ -200,14 +200,23 @@ export const changePassword = async (payload) => {
   const res = await API.post("admin/agency/change-password", payload);
   return unwrapResponse(res);
 };
-//transportservice.js
+
+// Agency Admin Profile Management (Fixed endpoints)
+export const getAgencyProfile = async () => {
+  const res = await API.get("admin/agency/profile");
+  return unwrapResponse(res);
+};
+
+
+
+// Keep backward compatibility
 export const getProfile = async () => {
   const res = await API.get("admin/agency/profile");
   return unwrapResponse(res);
 };
 
 export const updateProfile = async (payload) => {
-  const res = await API.patch("admin/agency/profile", payload);
+  const res = await API.put("admin/agency/profile", payload);
   return unwrapResponse(res);
 };
 /* ============================
@@ -228,15 +237,41 @@ export const addComment = async (applicationId, text) => {
   return unwrapResponse(res);
 };
 
-// Update an existing comment
+/// Update an existing comment
 export const updateComment = async (commentId, text) => {
-  const res = await API.put(`/admin/comments/${commentId}`, { text });
+  const res = await API.put(`/admin/agency/comments/${commentId}`, { text });
   return unwrapResponse(res);
 };
 
 // Delete a comment
 export const deleteComment = async (commentId) => {
-  const res = await API.delete(`/admin/comments/${commentId}`);
+  const res = await API.delete(`/admin/agency/comments/${commentId}`);
+  return unwrapResponse(res);
+};
+
+/* ============================
+   SUGGESTIONS & FEEDBACK API
+   ============================ */
+
+// Get all suggestions/feedback
+export const getSuggestions = async ({ limit = 50, offset = 0 } = {}) => {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  if (offset) params.set("offset", offset);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await API.get(`admin/agency/suggestions${query}`);
+  return unwrapResponse(res);
+};
+
+// Get specific suggestion by ID
+export const getSuggestionById = async (id) => {
+  const res = await API.get(`admin/agency/suggestions/${id}`);
+  return unwrapResponse(res);
+};
+
+// Respond to a suggestion
+export const respondToSuggestion = async (id, response) => {
+  const res = await API.post(`admin/agency/suggestions/${id}/respond`, { response });
   return unwrapResponse(res);
 };
 
@@ -244,5 +279,54 @@ export const deleteComment = async (commentId) => {
 // Get detailed analytics (for analytics page)
 export const getDetailedAnalytics = async () => {
   const res = await API.get("/admin/agency/stats/detailed");
+  return unwrapResponse(res);
+};
+
+export const onboardLicense = async (payload) => {
+  const res = await API.post("admin/agency/licenses/onboard", payload);
+  return unwrapResponse(res);
+};
+
+// Bulk license import
+export const importLicenses = async (records) => {
+  const res = await API.post("admin/agency/licenses/import", { records });
+  return unwrapResponse(res);
+};
+
+/* ============================
+   NOTIFICATIONS API
+   ============================ */
+
+export const getNotifications = async ({ limit = 50, offset = 0 } = {}) => {
+  const params = new URLSearchParams();
+  if (limit) params.set("limit", limit);
+  if (offset) params.set("offset", offset);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  const res = await API.get(`admin/agency/notifications${query}`);
+  return unwrapResponse(res);
+};
+
+export const createNotification = async (payload) => {
+  const res = await API.post("admin/agency/notifications", payload);
+  return unwrapResponse(res);
+};
+
+export const updateNotification = async (id, payload) => {
+  const res = await API.put(`admin/agency/notifications/${id}`, payload);
+  return unwrapResponse(res);
+};
+
+export const deleteNotification = async (id) => {
+  const res = await API.delete(`admin/agency/notifications/${id}`);
+  return unwrapResponse(res);
+};
+
+export const getNotificationById = async (id) => {
+  const res = await API.get(`admin/agency/notifications/${id}`);
+  return unwrapResponse(res);
+};
+
+export const sendNotification = async (id) => {
+  const res = await API.post(`admin/agency/notifications/${id}/send`);
   return unwrapResponse(res);
 };

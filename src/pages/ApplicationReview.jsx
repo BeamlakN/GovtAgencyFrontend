@@ -199,6 +199,8 @@ export default function ApplicationReview() {
   const [actionLoading, setActionLoading] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [showCommentPanel, setShowCommentPanel] = useState(false);
+  const [rejectionNotes, setRejectionNotes] = useState("");
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const returnUrl = queryParams.get('returnTo');
@@ -250,9 +252,17 @@ export default function ApplicationReview() {
   const handleApprove = async () => {
     setActionLoading(true);
     try {
-      await reviewApplication(id, { application_status: "approved", delivery_status: "pending" });
+      // Correct payload structure for approval
+      const payload = {
+        appStatus: "approved",
+        deliveryStatus: "ready",
+        notes: "Application approved. All documents verified and requirements met.",
+        trackingNumber: null
+      };
+      
+      await reviewApplication(id, payload);
       await loadApplication();
-      toastSuccess("Application approved successfully!");
+      toastSuccess("Application approved successfully! Legal records and digital certificates have been updated automatically.");
     } catch (err) {
       toastError(err?.response?.data?.error || err.message || "Failed to approve application.");
     } finally {
@@ -260,17 +270,36 @@ export default function ApplicationReview() {
     }
   };
 
-  const handleReject = async () => {
+  const handleRejectSubmit = async () => {
+    if (!rejectionNotes.trim()) {
+      toastError("Please provide a reason for rejection.");
+      return;
+    }
+    
     setActionLoading(true);
     try {
-      await reviewApplication(id, { application_status: "rejected", notes: "Rejected by agency review team." });
+      // Correct payload structure for rejection
+      const payload = {
+        appStatus: "rejected",
+        deliveryStatus: null,
+        notes: rejectionNotes,
+        trackingNumber: null
+      };
+      
+      await reviewApplication(id, payload);
       await loadApplication();
-      toastSuccess("Application rejected successfully!");
+      setShowRejectionModal(false);
+      setRejectionNotes("");
+      toastSuccess("Application rejected successfully.");
     } catch (err) {
       toastError(err?.response?.data?.error || err.message || "Failed to reject application.");
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleReject = () => {
+    setShowRejectionModal(true);
   };
 
   const handleCancel = async () => {
@@ -288,7 +317,6 @@ export default function ApplicationReview() {
 
   const handleCommentAdded = (comment) => {
     console.log("Comment added:", comment);
-    // Optional: Refresh application data or show notification
     toastSuccess("New comment added!");
   };
 
@@ -342,11 +370,44 @@ export default function ApplicationReview() {
         />
       )}
       
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Review Application</h1>
-          <p className="text-sm text-slate-500 mt-1">Review application details, documents, and make a decision</p>
+      {/* Rejection Modal */}
+      {showRejectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowRejectionModal(false)}>
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">Reject Application</h3>
+              <p className="text-sm text-slate-500 mb-4">Please provide a reason for rejecting this application.</p>
+              
+              <textarea
+                value={rejectionNotes}
+                onChange={(e) => setRejectionNotes(e.target.value)}
+                rows={4}
+                placeholder="Enter rejection reason..."
+                className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-900 outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                autoFocus
+              />
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowRejectionModal(false)}
+                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRejectSubmit}
+                  disabled={actionLoading || !rejectionNotes.trim()}
+                  className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? "Processing..." : "Confirm Rejection"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+      
+      <div className="flex justify-end mb-3">
         <button
           onClick={handleBack}
           className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
@@ -438,7 +499,7 @@ export default function ApplicationReview() {
                     disabled={actionLoading}
                     className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
-                    {actionLoading ? "..." : "✓ Approve"}
+                    {actionLoading ? "Processing..." : "✓ Approve"}
                   </button>
                 )}
                 {application.application_status !== "rejected" && (
@@ -446,7 +507,7 @@ export default function ApplicationReview() {
                     type="button"
                     onClick={handleReject}
                     disabled={actionLoading}
-                    className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
                     {actionLoading ? "..." : "✗ Reject"}
                   </button>
@@ -455,7 +516,7 @@ export default function ApplicationReview() {
                   type="button"
                   onClick={handleCancel}
                   disabled={actionLoading}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  className="rounded-xl bg-slate-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                 >
                   {actionLoading ? "..." : "⊗ Cancel"}
                 </button>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Activity, Building2, ChevronDown, FileText, Home, LogOut, Settings, Users, Wrench, BarChart3 } from "lucide-react";
+import { Activity, Building2, ChevronDown, FileText, Home, LogOut, Settings, Users, Wrench, BarChart3, IdCard, MessageSquare } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { getRegisteredServiceTypes } from "@/api/transportService";
+import { getTransportServices } from "@/api/transportService";
 
 const SERVICES_UPDATED_EVENT = "agency-services-updated";
 
@@ -14,15 +14,27 @@ export default function Sidebar() {
 
   const loadApplicationItems = async () => {
     try {
-      const types = await getRegisteredServiceTypes();
-      setApplicationItems(
-        (types || []).map((key) => ({
-          key,
-          label: key.replaceAll("_", " "),
-        }))
-      );
-    } catch {
-      // Sidebar should still render even if this fails.
+      // Fetch actual registered services from the database
+      const services = await getTransportServices();
+
+      
+      // Transform services into application items
+      const items = (services || []).map((service) => {
+        // Get the service name (priority: service_name, name, or fallback)
+        const serviceName = service.service_name || service.name || "";
+        // Create a key from the service name (lowercase with underscores)
+        const key = serviceName.toLowerCase().replace(/ /g, "_");
+        
+        return {
+          id: service.id || service._id || service.service_id,
+          key: key,
+          label: serviceName,
+        };
+      });
+      
+      setApplicationItems(items);
+    } catch (error) {
+      console.error("Failed to load services for sidebar:", error);
       setApplicationItems([]);
     }
   };
@@ -46,8 +58,6 @@ export default function Sidebar() {
     } 
     // If we're on an application review page, extract the service type from the application data
     else if (path.match(/^\/applications\/[^/]+\/review$/)) {
-      // We need to get the application type from somewhere
-      // Option 1: Store it in localStorage or sessionStorage when navigating from applications list
       const storedType = sessionStorage.getItem(`app_${path.split('/')[2]}_type`);
       if (storedType) {
         setSelectedApplicationType(storedType);
@@ -84,7 +94,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-72 min-h-screen bg-slate-900 text-slate-100 border-r border-slate-800 p-6 flex flex-col">
+    <aside className="fixed top-0 left-0 w-72 h-full bg-slate-900 text-slate-100 border-r border-slate-800 p-6 flex flex-col overflow-y-auto z-30">
       <div className="mb-8 text-center">
         <div className="h-16 w-16 mx-auto rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center">
           <Building2 size={30} className="text-slate-200" />
@@ -92,7 +102,7 @@ export default function Sidebar() {
         <h1 className="text-2xl font-semibold mt-3">Transport Agency Dashboard</h1>
       </div>
 
-      <nav className="space-y-2">
+      <nav className="space-y-2 flex-1">
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
@@ -152,6 +162,30 @@ export default function Sidebar() {
           <BarChart3 size={18} /> Analytics
         </NavLink>
 
+        {/* Suggestions & Feedback Link */}
+        <NavLink
+          to="/suggestions"
+          className={({ isActive }) =>
+            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
+            }`
+          }
+        >
+          <MessageSquare size={18} /> Suggestions & Feedback
+        </NavLink>
+
+        {/* License Onboarding Link */}
+        <NavLink
+          to="/license-onboarding"
+          className={({ isActive }) =>
+            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
+            }`
+          }
+        >
+          <IdCard size={18} /> License Onboarding
+        </NavLink>
+
         <NavLink
           to="/settings"
           className={({ isActive }) =>
@@ -198,26 +232,32 @@ export default function Sidebar() {
 
           {showApplications && (
             <div className="px-2 pb-2 space-y-1">
-              {applicationItems.map((item) => {
-                const isActive = isApplicationActive(item.key);
-                return (
-                  <Link
-                    key={item.key}
-                    to={`/applications?type=${item.key}`}
-                    className={`block rounded-md px-3 py-2 text-sm transition-colors capitalize ${
-                      isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {applicationItems.length === 0 ? (
+                <div className="text-slate-400 text-xs px-3 py-2">
+                  No services registered
+                </div>
+              ) : (
+                applicationItems.map((item) => {
+                  const isActive = isApplicationActive(item.key);
+                  return (
+                    <Link
+                      key={item.id || item.key}
+                      to={`/applications?type=${item.key}`}
+                      className={`block rounded-md px-3 py-2 text-sm transition-colors capitalize ${
+                        isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })
+              )}
             </div>
           )}
         </div>
       </nav>
 
-      <div className="mt-auto pt-6">
+      <div className="pt-6 mt-auto">
         <button
           type="button"
           onClick={handleLogout}
@@ -227,7 +267,6 @@ export default function Sidebar() {
           Logout
         </button>
       </div>
-
     </aside>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Search, Filter, ArrowUpDown } from "lucide-react";
 import {
   getAnnouncements,
   createAnnouncement,
@@ -12,17 +12,6 @@ import AnnouncementEditModal from "@/components/dashboard/AnnouncementEditModal"
 import AnnouncementCard from "@/components/dashboard/AnnouncementCard";
 import ConfirmDeleteModal from "@/components/dashboard/ConfirmDeleteModal";
 
-const formatDate = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 const defaultForm = {
   title: "",
   content: "",
@@ -32,6 +21,7 @@ const defaultForm = {
 
 export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +31,9 @@ export default function Announcements() {
   const [pendingAnnouncement, setPendingAnnouncement] = useState(null);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [form, setForm] = useState(defaultForm);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
 
   const loadAnnouncements = async () => {
     setLoading(true);
@@ -59,6 +52,31 @@ export default function Announcements() {
   useEffect(() => {
     loadAnnouncements();
   }, []);
+
+  useEffect(() => {
+    let filtered = [...announcements];
+    
+    if (searchTerm) {
+      filtered = filtered.filter(a => 
+        a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.content?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(a => 
+        filterStatus === "active" ? a.is_active : !a.is_active
+      );
+    }
+    
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0);
+      const dateB = new Date(b.created_at || 0);
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+    
+    setFilteredAnnouncements(filtered);
+  }, [announcements, searchTerm, filterStatus, sortOrder]);
 
   const handleEdit = (announcement) => {
     setEditingAnnouncement(announcement);
@@ -82,10 +100,6 @@ export default function Announcements() {
     setForm(defaultForm);
     setShowCreateModal(false);
     setShowEditModal(false);
-  };
-
-  const handleFormChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (event) => {
@@ -129,11 +143,32 @@ export default function Announcements() {
   const handleDeactivate = async (announcement) => {
     setSaving(true);
     try {
-      await deleteAnnouncement(announcement.id);
+      await updateAnnouncement(announcement.id, { is_active: false });
       toastSuccess("Announcement deactivated.");
       await loadAnnouncements();
     } catch (err) {
       toastError(err?.response?.data?.error || err.message || "Failed to deactivate announcement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReactivate = async (announcement) => {
+    setSaving(true);
+    try {
+      const payload = {
+        title: announcement.title,
+        content: announcement.content,
+        image_url: announcement.image_url || null,
+        target_role: announcement.target_role || "citizen",
+        is_active: true
+      };
+      
+      await updateAnnouncement(announcement.id, payload);
+      toastSuccess("Announcement reactivated successfully.");
+      await loadAnnouncements();
+    } catch (err) {
+      toastError(err?.response?.data?.error || err.message || "Failed to reactivate announcement.");
     } finally {
       setSaving(false);
     }
@@ -156,97 +191,110 @@ export default function Announcements() {
     setPendingAnnouncement(null);
   };
 
-  const handleReactivate = async (announcement) => {
-    setSaving(true);
-    try {
-      await updateAnnouncement(announcement.id, { is_active: true });
-      toastSuccess("Announcement reactivated.");
-      await loadAnnouncements();
-    } catch (err) {
-      toastError(err?.response?.data?.error || err.message || "Failed to reactivate announcement.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Announcements</h1>
-          <p className="text-sm text-slate-500 mt-2">Create and manage bureau announcements for citizens and admins.</p>
+    <div className="p-8">
+      {/* Search and Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex flex-1 gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search announcements..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+            />
+          </div>
+          
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleCreate}
-          className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
         >
           <Plus size={16} /> Create Announcement
         </button>
       </div>
 
-      {showCreateModal && (
-        <AnnouncementCreateModal
-          isOpen={showCreateModal}
-          form={form}
-          setForm={setForm}
-          loading={saving}
-          onClose={resetForm}
-          onSubmit={handleSubmit}
-        />
-      )}
-
-      {showEditModal && (
-        <AnnouncementEditModal
-          isOpen={showEditModal}
-          form={form}
-          setForm={setForm}
-          loading={saving}
-          onClose={resetForm}
-          onSubmit={handleSubmit}
-        />
-      )}
-
-      <div className="space-y-6">
-        {/* <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Announcement list</h2>
-            <p className="text-sm text-slate-500 mt-1">Manage existing bureau announcements and publish updates.</p>
-          </div>
-          <div className="text-sm text-slate-500">{announcements.length} announcements</div>
-        </div> */}
-
-        {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="mt-4">
-          {loading ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
-              Loading announcements...
-            </div>
-          ) : announcements.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
-              No announcements available.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {announcements.map((announcement) => (
-                <AnnouncementCard
-                  key={announcement.id}
-                  announcement={announcement}
-                  onEdit={() => handleEdit(announcement)}
-                  onDeactivate={() => openDeactivateModal(announcement)}
-                  onReactivate={() => handleReactivate(announcement)}
-                />
-              ))}
-            </div>
-          )}
+      {/* Results Summary */}
+      <div className="mb-4">
+        <div className="text-sm text-slate-500">
+          Showing {filteredAnnouncements.length} of {announcements.length} announcements
+          {(searchTerm || filterStatus !== "all") && " (filtered)"}
         </div>
       </div>
+
+      {error && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+          Loading announcements...
+        </div>
+      ) : filteredAnnouncements.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-500">
+          No announcements found.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredAnnouncements.map((announcement) => (
+            <AnnouncementCard
+              key={announcement.id}
+              announcement={announcement}
+              onEdit={() => handleEdit(announcement)}
+              onDeactivate={() => openDeactivateModal(announcement)}
+              onReactivate={() => handleReactivate(announcement)}
+            />
+          ))}
+        </div>
+      )}
+
+      <AnnouncementCreateModal
+        isOpen={showCreateModal}
+        form={form}
+        setForm={setForm}
+        loading={saving}
+        onClose={resetForm}
+        onSubmit={handleSubmit}
+      />
+
+      <AnnouncementEditModal
+        isOpen={showEditModal}
+        form={form}
+        setForm={setForm}
+        loading={saving}
+        onClose={resetForm}
+        onSubmit={handleSubmit}
+      />
 
       <ConfirmDeleteModal
         isOpen={showConfirmModal}

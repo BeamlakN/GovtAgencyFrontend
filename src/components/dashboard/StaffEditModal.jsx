@@ -1,4 +1,6 @@
-import { PencilLine, Save } from "lucide-react";
+import { PencilLine, Save, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { validateField, getValidationRules } from "@/utils/validation";
 
 export default function StaffEditModal({
   editingId,
@@ -9,7 +11,33 @@ export default function StaffEditModal({
   onClose,
   onSubmit,
 }) {
+  const [localErrors, setLocalErrors] = useState({});
+  const rules = getValidationRules("staffEdit");
+
+  const handleFieldChange = (field, value) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+    const error = validateField(field, value, rules);
+    setLocalErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  const validateAllFields = () => {
+    const errors = {};
+    errors.name = validateField("name", editForm.name, rules);
+    
+    setLocalErrors(errors);
+    return !Object.values(errors).some(error => error);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateAllFields()) {
+      onSubmit(e);
+    }
+  };
+
   if (!editingId) return null;
+
+  const getFieldError = (field) => localErrors[field] || fieldErrors?.[field];
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-[2px] px-4" onClick={onClose}>
@@ -25,53 +53,67 @@ export default function StaffEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-slate-400 hover:text-slate-600 text-2xl"
           >
             ×
           </button>
         </div>
-        <form onSubmit={onSubmit} className="p-6">
-          <div className="grid grid-cols-1 gap-4">
+        
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-1 gap-5">
+            {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Full Name <span className="text-red-500">*</span>
               </label>
               <input
-                value={editForm.name}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                value={editForm.name || ""}
+                onChange={(e) => handleFieldChange("name", e.target.value)}
+                placeholder="e.g., John Doe"
+                className={`w-full rounded-lg border px-3 py-2.5 outline-none focus:ring-2 transition-colors ${
+                  getFieldError("name") 
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
+                    : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                }`}
                 required
               />
-              {fieldErrors?.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
+              {getFieldError("name") && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {getFieldError("name")}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-slate-400">3-100 characters, letters and spaces only</p>
             </div>
             
+            {/* Email Address (Read-only) */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Email Address
               </label>
               <input
                 type="email"
-                value={editForm.email}
+                value={editForm.email || ""}
                 disabled
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-500 cursor-not-allowed"
               />
-              <p className="mt-1 text-xs text-slate-400">Email cannot be changed</p>
+              <p className="mt-1 text-xs text-slate-400">Email address cannot be changed</p>
             </div>
             
+            {/* Role Selection - Only Admin role available */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Role <span className="text-red-500">*</span>
               </label>
               <select
-                value={editForm.role}
+                value={editForm.role || "admin"}
                 onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value }))}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               >
                 <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
               </select>
               <p className="mt-1 text-xs text-slate-400">
-                Super admins can manage staff members
+                Admins can manage applications and view agency data
               </p>
             </div>
           </div>

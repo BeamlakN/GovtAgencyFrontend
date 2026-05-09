@@ -1,0 +1,3 @@
+// src/config/supabase.js
+export const SUPABASE_URL = "https://kebaguvlswwdljfnoknf.supabase.co";
+export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlYmFndXZsc3d3ZGxqZm5va25mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3NzQwMDUsImV4cCI6MjA4MDM1MDAwNX0.DYyNh4EIA1eiAJ63aN-SWJtzFP7kR3BKMc7jmtAXOm4";

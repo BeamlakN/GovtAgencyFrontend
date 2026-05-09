@@ -10,8 +10,11 @@ import AuditLogs from "./pages/AuditLogs";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Analytics from "./pages/Analytics";
+import Suggestions from "./pages/Suggestions";
 import Layout from "./components/dashboard/Layout";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import LicenseOnboarding from "./pages/LicenseOnboarding";
+import SuggestionDetail from "./pages/SuggestionDetail";
 
 function App() {
   return (
@@ -29,6 +32,9 @@ function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/applications/:id/review" element={<ApplicationReview />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/suggestions" element={<Suggestions />} />
+        <Route path="/license-onboarding" element={<LicenseOnboarding />} />
+        <Route path="/suggestions/:id" element={<SuggestionDetail />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

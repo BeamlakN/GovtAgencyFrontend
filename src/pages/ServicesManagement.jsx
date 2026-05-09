@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import {
   createTransportService,
   deleteTransportService,
@@ -23,6 +23,8 @@ const initialForm = {
 
 export default function ServicesManagement() {
   const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState(initialForm);
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,6 @@ export default function ServicesManagement() {
   const [editErrors, setEditErrors] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   
-  // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -61,6 +62,16 @@ export default function ServicesManagement() {
     loadServices();
   }, []);
 
+  useEffect(() => {
+    let filtered = [...services];
+    if (searchTerm) {
+      filtered = filtered.filter(s => 
+        (s.service_name || s.name)?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredServices(filtered);
+  }, [services, searchTerm]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canManageServices) return;
@@ -68,10 +79,25 @@ export default function ServicesManagement() {
     const nextErrors = {};
     if (!form.name.trim()) nextErrors.name = "Service name is required.";
     else if (form.name.trim().length < 3) nextErrors.name = "Service name must be at least 3 characters.";
+    
+    // Check for duplicate service name
+    const isDuplicate = services.some(
+      service => (service.name || service.service_name || "").toLowerCase() === form.name.toLowerCase()
+    );
+    if (isDuplicate) {
+      nextErrors.name = "This service already exists. Please select a different service.";
+    }
+    
     if (!form.description.trim()) nextErrors.description = "Description is required.";
     else if (form.description.trim().length < 10) nextErrors.description = "Description must be at least 10 characters.";
+    // Check if description is only numbers
+    else if (/^\d+$/.test(form.description.trim())) {
+      nextErrors.description = "Description cannot contain only numbers. Please add meaningful text.";
+    }
+    
     if (!form.fee && form.fee !== 0) nextErrors.fee = "Base fee is required.";
     else if (Number(form.fee) < 0) nextErrors.fee = "Base fee cannot be negative.";
+    
     if (form.docs.trim()) {
       const docsArray = form.docs
         .split(",")
@@ -79,6 +105,7 @@ export default function ServicesManagement() {
         .filter(Boolean);
       if (docsArray.length === 0) nextErrors.docs = "Provide valid document names separated by commas.";
     }
+    
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       return;
@@ -207,44 +234,43 @@ export default function ServicesManagement() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Services Management</h1>
-        </div>
-        {canManageServices && (
-          <button
-            type="button"
-            onClick={() => setShowCreateForm((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 hover:bg-slate-800 transition-colors"
-          >
-            <Plus size={16} />
-            {showCreateForm ? "Close Form" : "Create Service"}
-          </button>
-        )}
+    <div className="p-8">
+      {/* Search Bar - Create button removed */}
+      <div className="relative max-w-md mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search services..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+        />
       </div>
 
       {!canManageServices && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm mb-6">
           You do not have permission to manage service types.
         </div>
       )}
 
-      <div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {services.map((service) => (
-            <ServiceCard
-              key={getServiceId(service) || service.service_name || service.name}
-              service={service}
-              canEdit={canManageServices}
-              onEdit={() => startEdit(service)}
-              onDelete={() => openDeleteModal(service)}
-            />
-          ))}
-          {services.length === 0 && <p className="text-sm text-slate-500">No services found.</p>}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filteredServices.map((service) => (
+          <ServiceCard
+            key={getServiceId(service) || service.service_name || service.name}
+            service={service}
+            canEdit={canManageServices}
+            onEdit={() => startEdit(service)}
+            onDelete={() => openDeleteModal(service)}
+          />
+        ))}
+        {filteredServices.length === 0 && (
+          <p className="text-sm text-slate-500 col-span-full text-center py-8">
+            No services found.
+          </p>
+        )}
       </div>
 
+      {/* ServiceCreateModal is kept but the button to open it is removed */}
       <ServiceCreateModal
         isOpen={canManageServices && showCreateForm}
         form={form}
@@ -253,6 +279,7 @@ export default function ServicesManagement() {
         loading={loading}
         onClose={() => setShowCreateForm(false)}
         onSubmit={handleSubmit}
+        existingServices={services}
       />
 
       <ServiceEditModal

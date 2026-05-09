@@ -1,6 +1,7 @@
-// ChangePasswordModal.jsx - Updated to appear in top-right corner
 import { useEffect, useState, useRef } from "react";
+import { Lock, Eye, EyeOff, X, KeyRound, AlertCircle } from "lucide-react";
 import { toastError } from "@/components/ui/toast";
+import { validateField, getValidationRules, getPasswordStrength, getPasswordRequirements } from "@/utils/validation";
 
 function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
   const [formData, setFormData] = useState({
@@ -8,14 +9,24 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [localErrors, setLocalErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const modalRef = useRef(null);
+  const rules = getValidationRules("changePassword");
 
   useEffect(() => {
-    if (!isOpen) {
-      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    if (isOpen) {
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setLocalErrors({});
     }
   }, [isOpen]);
 
@@ -32,16 +43,40 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
     }
   }, [isOpen, onClose]);
 
+  const handleFieldChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    let error = "";
+    if (field === "currentPassword") {
+      error = validateField("currentPassword", value, rules);
+    } else if (field === "newPassword") {
+      error = validateField("newPassword", value, rules);
+      // Clear confirm password error when new password changes
+      if (formData.confirmPassword) {
+        const confirmError = validateField("confirmPassword", formData.confirmPassword, rules, value);
+        setLocalErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+      }
+    } else if (field === "confirmPassword") {
+      error = validateField("confirmPassword", value, rules, formData.newPassword);
+    }
+    
+    setLocalErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const validateAllFields = () => {
+    const errors = {};
+    errors.currentPassword = validateField("currentPassword", formData.currentPassword, rules);
+    errors.newPassword = validateField("newPassword", formData.newPassword, rules);
+    errors.confirmPassword = validateField("confirmPassword", formData.confirmPassword, rules, formData.newPassword);
+    
+    setLocalErrors(errors);
+    return !Object.values(errors).some(error => error);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (formData.newPassword.length < 6) {
-      toastError("New password must be at least 6 characters long.");
-      return;
-    }
-    
-    if (formData.newPassword !== formData.confirmPassword) {
-      toastError("New password and confirmation must match.");
+    if (!validateAllFields()) {
       return;
     }
     
@@ -59,114 +94,212 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
     }
   };
 
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const getFieldError = (field) => localErrors[field];
+  const passwordStrength = getPasswordStrength(formData.newPassword);
+  const passwordReqs = getPasswordRequirements(formData.newPassword);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black bg-opacity-30 transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="absolute top-16 right-4 z-50 w-96">
+      <div className="absolute top-16 right-4 w-full max-w-md">
         <div
           ref={modalRef}
-          className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden transform transition-all animate-in slide-in-from-top-2 fade-in duration-200"
+          className="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all animate-in zoom-in-95 duration-200"
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
-            <button 
-              onClick={onClose} 
-              className="text-gray-400 hover:text-gray-500 transition-colors rounded-lg p-1 hover:bg-gray-100"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          {/* Header */}
+          <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white">Change Password</h3>
+                <p className="text-sm text-slate-300 mt-0.5">Update your security credentials</p>
+              </div>
+              <button 
+                onClick={onClose} 
+                className="text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Current Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Current Password <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
+                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type={showCurrentPassword ? "text" : "password"}
+                  type={showPasswords.current ? "text" : "password"}
                   value={formData.currentPassword}
-                  onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                  onChange={(e) => handleFieldChange("currentPassword", e.target.value)}
+                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                    getFieldError("currentPassword") 
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
+                      : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
+                  }`}
+                  placeholder="Enter current password"
                   required
                 />
                 <button
                   type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => togglePasswordVisibility("current")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showCurrentPassword ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  )}
+                  {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {getFieldError("currentPassword") && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {getFieldError("currentPassword")}
+                </p>
+              )}
             </div>
             
+            {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                New Password <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
+                <KeyRound size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  type={showNewPassword ? "text" : "password"}
+                  type={showPasswords.new ? "text" : "password"}
                   value={formData.newPassword}
-                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                  onChange={(e) => handleFieldChange("newPassword", e.target.value)}
+                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                    getFieldError("newPassword") 
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
+                      : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
+                  }`}
+                  placeholder="Enter new password"
                   required
                 />
                 <button
                   type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => togglePasswordVisibility("new")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showNewPassword ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  )}
+                  {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              
+              {/* Password Strength Indicator */}
+              {formData.newPassword && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          passwordStrength.score <= 2 ? "bg-red-500" :
+                          passwordStrength.score <= 4 ? "bg-yellow-500" : "bg-green-500"
+                        }`}
+                        style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  
+                  {/* Password Requirements Checklist */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className={`flex items-center gap-1 ${passwordReqs.minLength ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.minLength ? "✓" : "○"}</span>
+                      <span>At least 8 characters</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${passwordReqs.hasLowercase ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.hasLowercase ? "✓" : "○"}</span>
+                      <span>Lowercase letter</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${passwordReqs.hasUppercase ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.hasUppercase ? "✓" : "○"}</span>
+                      <span>Uppercase letter</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${passwordReqs.hasNumber ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.hasNumber ? "✓" : "○"}</span>
+                      <span>Number (0-9)</span>
+                    </div>
+                    <div className={`col-span-2 flex items-center gap-1 ${passwordReqs.hasSpecialChar ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.hasSpecialChar ? "✓" : "○"}</span>
+                      <span>Special character (@$!%*?&)</span>
+                    </div>
+                    <div className={`col-span-2 flex items-center gap-1 ${passwordReqs.noSpaces ? "text-green-600" : "text-slate-400"}`}>
+                      <span>{passwordReqs.noSpaces ? "✓" : "○"}</span>
+                      <span>No spaces allowed</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {getFieldError("newPassword") && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {getFieldError("newPassword")}
+                </p>
+              )}
             </div>
             
+            {/* Confirm New Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
-                required
-              />
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Confirm New Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleFieldChange("confirmPassword", e.target.value)}
+                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                    getFieldError("confirmPassword") 
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
+                      : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
+                  }`}
+                  placeholder="Confirm new password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("confirm")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {getFieldError("confirmPassword") && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  {getFieldError("confirmPassword")}
+                </p>
+              )}
             </div>
             
-            <div className="flex gap-3 pt-2">
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? "Changing..." : "Change Password"}
+                {saving ? "Updating..." : "Update Password"}
               </button>
             </div>
           </form>
