@@ -2,15 +2,13 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function StatCard({ title, value, icon }) {
   return (
-    <Card className="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="flex items-center justify-between p-5">
+    <Card className="shadow-md rounded-2xl">
+      <CardContent className="flex items-center justify-between p-4">
         <div>
-          <p className="text-xs font-medium text-slate-500">{title}</p>
-          <h2 className="mt-1 text-2xl font-bold text-slate-900">{value}</h2>
+          <p className="text-sm text-gray-500">{title}</p>
+          <h2 className="text-2xl font-bold">{value}</h2>
         </div>
-        <div className="h-11 w-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
-          <div className="text-xl">{icon}</div>
-        </div>
+        <div className="text-3xl">{icon}</div>
       </CardContent>
     </Card>
   );

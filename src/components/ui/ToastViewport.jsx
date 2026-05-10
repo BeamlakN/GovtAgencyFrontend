@@ -22,7 +22,7 @@ export default function ToastViewport() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`min-w-64 max-w-sm rounded-lg border px-4 py-3 text-sm shadow-lg ${
+          className={`min-w-64 max-w-sm rounded-lg border px-3 py-3 text-sm shadow-lg ${
             toast.type === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : toast.type === "error"
@@ -36,3 +36,4 @@ export default function ToastViewport() {
     </div>
   );
 }
+

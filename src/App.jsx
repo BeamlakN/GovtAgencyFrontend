@@ -14,7 +14,7 @@ import Suggestions from "./pages/Suggestions";
 import Layout from "./components/dashboard/Layout";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import LicenseOnboarding from "./pages/LicenseOnboarding";
-import SuggestionDetail from "./pages/SuggestionDetail";
+import SuggestionDetail from "./components/dashboard/SuggestionDetail";
 
 function App() {
   return (

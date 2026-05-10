@@ -45,17 +45,14 @@ const validateCommentText = (text) => {
     return "Message must not exceed 1000 characters";
   }
   
-  // Check if message is only numbers
   if (/^\d+$/.test(trimmedText)) {
     return "Message cannot contain only numbers. Please add meaningful text.";
   }
   
-  // Check if message is only special characters
   if (/^[^a-zA-Z0-9]+$/.test(trimmedText)) {
     return "Message cannot contain only special characters. Please add meaningful text.";
   }
   
-  // Check for too many consecutive spaces
   if (/\s{3,}/.test(trimmedText)) {
     return "Message cannot contain too many consecutive spaces";
   }
@@ -84,12 +81,10 @@ const ReviewThread = ({
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === "admin" || currentUser?.role === "super_admin";
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load comments
   const loadComments = useCallback(async () => {
     if (!applicationId) return;
     
@@ -118,13 +113,11 @@ const ReviewThread = ({
     }
   }, [applicationId]);
 
-  // Initial load
   useEffect(() => {
     loadComments();
   }, [loadComments]);
 
   const handleSubmitComment = async () => {
-    // Validate before submitting
     const error = validateCommentText(draftComment);
     if (error) {
       setValidationError(error);
@@ -166,7 +159,6 @@ const ReviewThread = ({
   };
 
   const handleEditComment = async (commentId, newText) => {
-    // Validate before editing
     const error = validateCommentText(newText);
     if (error) {
       toastError(error);
@@ -263,42 +255,42 @@ const ReviewThread = ({
 
   if (loading && messages.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-900"></div>
-        <span className="ml-2 text-sm text-slate-500">Loading messages...</span>
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-900"></div>
+        <span className="ml-2 text-xs text-slate-500">Loading messages...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-slate-200">
+    <div className="flex flex-col h-full bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200">
       {/* Chat Header */}
-      <div className="px-5 py-4 border-b border-slate-100 bg-white">
-        <div className="flex items-center gap-3">
+      <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-100 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="relative">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
-              <Send className="h-5 w-5 text-white" />
+            <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+              <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></div>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">Review Conversation</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="font-semibold text-slate-900 text-sm sm:text-base">Review Conversation</h3>
+            <p className="text-[10px] sm:text-xs text-slate-500">
               {messages.length} {messages.length === 1 ? 'message' : 'messages'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Messages Area - Telegram Style */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[400px] max-h-[500px] bg-gradient-to-b from-slate-50/50 to-white">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3 min-h-[300px] sm:min-h-[400px] max-h-[400px] sm:max-h-[500px] bg-gradient-to-b from-slate-50/50 to-white">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-              <Send className="h-8 w-8 text-slate-400" />
+          <div className="flex flex-col items-center justify-center h-full text-center py-8 sm:py-12">
+            <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-slate-100 flex items-center justify-center mb-2 sm:mb-3">
+              <Send className="h-5 w-5 sm:h-7 sm:w-7 text-slate-400" />
             </div>
-            <p className="text-sm font-medium text-slate-700">No messages yet</p>
-            <p className="text-xs text-slate-400 mt-1">Start the conversation with the citizen</p>
+            <p className="text-xs sm:text-sm font-medium text-slate-700">No messages yet</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1">Start the conversation with the citizen</p>
           </div>
         )}
         
@@ -312,44 +304,43 @@ const ReviewThread = ({
               key={message.id}
               className={`flex ${isAdminMessage ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-200`}
             >
-              <div className={`flex gap-2 max-w-[75%] ${isAdminMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar - Citizen only, shown for first message in sequence */}
+              <div className={`flex gap-1.5 sm:gap-2 max-w-[80%] sm:max-w-[75%] ${isAdminMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                {/* Avatar - Citizen only */}
                 {!isAdminMessage && showAvatar && (
                   <div className="flex-shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
-                      <span className="text-xs font-medium text-white">C</span>
+                    <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                      <span className="text-[9px] sm:text-xs font-medium text-white">C</span>
                     </div>
                   </div>
                 )}
                 
-                {/* Spacer for alignment when no avatar */}
-                {!isAdminMessage && !showAvatar && <div className="w-8 flex-shrink-0"></div>}
+                {!isAdminMessage && !showAvatar && <div className="w-6 sm:w-7 flex-shrink-0"></div>}
                 
                 {/* Message Content */}
                 <div className={`flex flex-col ${isAdminMessage ? 'items-end' : 'items-start'}`}>
                   {/* Message Bubble */}
                   <div className="relative group">
                     {editCommentId === message.id ? (
-                      <div className="bg-white rounded-2xl p-3 shadow-lg border border-slate-200 min-w-[220px]">
+                      <div className="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-lg border border-slate-200 min-w-[200px] sm:min-w-[220px]">
                         <textarea
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
                           rows={3}
-                          className="w-full rounded-xl border border-slate-200 p-2 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                          className="w-full rounded-lg border border-slate-200 p-1.5 sm:p-2 text-xs sm:text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
                           onKeyPress={handleKeyPress}
                           autoFocus
                         />
-                        <div className="flex gap-2 mt-2 justify-end">
+                        <div className="flex gap-1.5 sm:gap-2 mt-2 justify-end">
                           <button
                             onClick={handleEditSubmit}
                             disabled={!editText.trim() || editing}
-                            className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white hover:bg-slate-800 disabled:opacity-50"
+                            className="rounded-lg bg-slate-900 px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-white hover:bg-slate-800 disabled:opacity-50"
                           >
                             Save
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
+                            className="rounded-lg border border-slate-200 px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-slate-600 hover:bg-slate-50"
                           >
                             Cancel
                           </button>
@@ -357,13 +348,13 @@ const ReviewThread = ({
                       </div>
                     ) : (
                       <div
-                        className={`px-3.5 py-2.5 shadow-sm ${
+                        className={`px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 shadow-sm text-xs sm:text-sm ${
                           isAdminMessage
-                            ? 'bg-slate-900 text-white rounded-2xl rounded-br-md'
-                            : 'bg-white text-slate-900 rounded-2xl rounded-bl-md border border-slate-200'
+                            ? 'bg-slate-900 text-white rounded-xl sm:rounded-2xl rounded-br-md'
+                            : 'bg-white text-slate-900 rounded-xl sm:rounded-2xl rounded-bl-md border border-slate-200'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-line break-words leading-relaxed">
+                        <p className="whitespace-pre-line break-words leading-relaxed">
                           {message.text}
                         </p>
                       </div>
@@ -371,43 +362,42 @@ const ReviewThread = ({
                     
                     {/* Edit/Delete Buttons - Admin messages only */}
                     {isAdminMessage && !readOnly && editCommentId !== message.id && (
-                      <div className="absolute -top-2 -left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute -top-1.5 -left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="flex gap-0.5 bg-white rounded-lg shadow-md border border-slate-200 p-0.5">
                           <button
                             onClick={() => startEdit(message)}
-                            className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
+                            className="p-1 rounded-md hover:bg-slate-100 transition-colors"
                             title="Edit"
                           >
-                            <Edit2 className="h-3 w-3 text-slate-600" />
+                            <Edit2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-600" />
                           </button>
                           <button
                             onClick={() => handleDeleteComment(message.id)}
-                            className="p-1.5 rounded-md hover:bg-red-50 transition-colors"
+                            className="p-1 rounded-md hover:bg-red-50 transition-colors"
                             title="Delete"
                           >
-                            <Trash2 className="h-3 w-3 text-red-500" />
+                            <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-500" />
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Message Footer - Time & Status */}
-                  <div className={`flex items-center gap-1 mt-1 px-1 ${isAdminMessage ? 'justify-end' : 'justify-start'}`}>
-                    <span className="text-[10px] text-slate-400">
+                  {/* Message Footer */}
+                  <div className={`flex items-center gap-0.5 sm:gap-1 mt-0.5 px-1 ${isAdminMessage ? 'justify-end' : 'justify-start'}`}>
+                    <span className="text-[8px] sm:text-[10px] text-slate-400">
                       {formatDate(message.createdAt)}
                     </span>
                     {message.isEdited && (
-                      <span className="text-[9px] text-slate-300">(edited)</span>
+                      <span className="text-[7px] sm:text-[9px] text-slate-300">(edited)</span>
                     )}
                     {isAdminMessage && !readOnly && (
-                      <CheckCheck className="h-3 w-3 text-slate-400" />
+                      <CheckCheck className="h-2 w-2 sm:h-3 sm:w-3 text-slate-400" />
                     )}
                   </div>
                 </div>
                 
-                {/* No avatar for admin messages */}
-                {isAdminMessage && <div className="w-8 flex-shrink-0"></div>}
+                {isAdminMessage && <div className="w-6 sm:w-7 flex-shrink-0"></div>}
               </div>
             </div>
           );
@@ -415,11 +405,11 @@ const ReviewThread = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Telegram Style with Validation */}
+      {/* Input Area */}
       {!readOnly && (
-        <div className="p-4 border-t border-slate-100 bg-white">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-end gap-2">
+        <div className="p-2.5 sm:p-3 border-t border-slate-100 bg-white">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            <div className="flex items-end gap-1.5 sm:gap-2">
               <div className="flex-1 relative">
                 <textarea
                   value={draftComment}
@@ -427,22 +417,22 @@ const ReviewThread = ({
                   onKeyPress={handleKeyPress}
                   rows={1}
                   placeholder="Write a message..."
-                  className={`w-full rounded-2xl border px-4 py-2.5 pr-12 text-sm text-slate-900 outline-none focus:ring-1 transition-all resize-none ${
+                  className={`w-full rounded-xl sm:rounded-2xl border px-2.5 sm:px-3 py-1.5 sm:py-2.5 pr-8 sm:pr-12 text-xs sm:text-sm text-slate-900 outline-none focus:ring-1 transition-all resize-none ${
                     validationError
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400'
                   } bg-white`}
                   disabled={submitting}
-                  style={{ minHeight: '42px', maxHeight: '100px' }}
+                  style={{ minHeight: '36px', maxHeight: '80px' }}
                   onInput={(e) => {
                     e.target.style.height = 'auto';
-                    e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
                   }}
                 />
                 {validationError && (
-                  <div className="absolute -bottom-6 left-0 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span className="text-[10px] text-red-500">{validationError}</span>
+                  <div className="absolute -bottom-5 left-0 flex items-center gap-0.5">
+                    <AlertCircle className="h-2.5 w-2.5 text-red-500" />
+                    <span className="text-[9px] text-red-500">{validationError}</span>
                   </div>
                 )}
               </div>
@@ -450,19 +440,19 @@ const ReviewThread = ({
                 type="button"
                 onClick={handleSubmitComment}
                 disabled={!draftComment.trim() || submitting}
-                className={`rounded-full p-2.5 transition-all flex-shrink-0 ${
+                className={`rounded-full p-1.5 sm:p-2 transition-all flex-shrink-0 ${
                   draftComment.trim() && !submitting && !validationError
                     ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
             <div className="text-center">
-              <p className="text-[10px] text-slate-400">
-                Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-mono">Enter</kbd> to send • 
-                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-[9px] font-mono ml-1">Shift+Enter</kbd> for new line
+              <p className="text-[8px] sm:text-[10px] text-slate-400">
+                Press <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[7px] sm:text-[9px] font-mono">Enter</kbd> to send • 
+                <kbd className="px-1 py-0.5 bg-slate-100 rounded text-[7px] sm:text-[9px] font-mono ml-1">Shift+Enter</kbd> for new line
               </p>
             </div>
           </div>

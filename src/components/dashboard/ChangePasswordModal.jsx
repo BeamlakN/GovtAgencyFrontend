@@ -51,7 +51,6 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
       error = validateField("currentPassword", value, rules);
     } else if (field === "newPassword") {
       error = validateField("newPassword", value, rules);
-      // Clear confirm password error when new password changes
       if (formData.confirmPassword) {
         const confirmError = validateField("confirmPassword", formData.confirmPassword, rules, value);
         setLocalErrors(prev => ({ ...prev, confirmPassword: confirmError }));
@@ -108,41 +107,41 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="absolute top-16 right-4 w-full max-w-md">
+      <div className="absolute top-16 right-4 w-full max-w-[95%] sm:max-w-md">
         <div
           ref={modalRef}
-          className="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all animate-in zoom-in-95 duration-200"
+          className="relative transform overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-2xl transition-all"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-3 sm:px-4 py-2.5 sm:py-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-white">Change Password</h3>
-                <p className="text-sm text-slate-300 mt-0.5">Update your security credentials</p>
+                <h3 className="text-sm sm:text-base font-bold text-white">Change Password</h3>
+                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">Update your security credentials</p>
               </div>
               <button 
                 onClick={onClose} 
                 className="text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"
               >
-                <X size={20} />
+                <X size={18} className="sm:w-[20px] sm:h-[20px]" />
               </button>
             </div>
           </div>
           
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
             {/* Current Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Current Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={16} className="sm:w-[18px] sm:h-[18px] absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type={showPasswords.current ? "text" : "password"}
                   value={formData.currentPassword}
                   onChange={(e) => handleFieldChange("currentPassword", e.target.value)}
-                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                  className={`w-full rounded-lg sm:rounded-xl border pl-9 sm:pl-10 pr-9 sm:pr-12 py-1.5 sm:py-2.5 text-sm text-slate-900 outline-none focus:ring-2 transition-all ${
                     getFieldError("currentPassword") 
                       ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                       : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
@@ -155,12 +154,12 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
                   onClick={() => togglePasswordVisibility("current")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPasswords.current ? <EyeOff size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 </button>
               </div>
               {getFieldError("currentPassword") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("currentPassword")}
                 </p>
               )}
@@ -168,16 +167,16 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
             
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 New Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <KeyRound size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <KeyRound size={16} className="sm:w-[18px] sm:h-[18px] absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type={showPasswords.new ? "text" : "password"}
                   value={formData.newPassword}
                   onChange={(e) => handleFieldChange("newPassword", e.target.value)}
-                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                  className={`w-full rounded-lg sm:rounded-xl border pl-9 sm:pl-10 pr-9 sm:pr-12 py-1.5 sm:py-2.5 text-sm text-slate-900 outline-none focus:ring-2 transition-all ${
                     getFieldError("newPassword") 
                       ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                       : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
@@ -190,15 +189,15 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
                   onClick={() => togglePasswordVisibility("new")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPasswords.new ? <EyeOff size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 </button>
               </div>
               
               {/* Password Strength Indicator */}
               {formData.newPassword && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 space-y-1.5 sm:space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
                       <div 
                         className={`h-full transition-all duration-300 ${
                           passwordStrength.score <= 2 ? "bg-red-500" :
@@ -207,44 +206,44 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
                         style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
                       />
                     </div>
-                    <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                    <span className={`text-[10px] sm:text-xs font-medium ${passwordStrength.color}`}>
                       {passwordStrength.label}
                     </span>
                   </div>
                   
                   {/* Password Requirements Checklist */}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
                     <div className={`flex items-center gap-1 ${passwordReqs.minLength ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.minLength ? "✓" : "○"}</span>
-                      <span>At least 8 characters</span>
+                      <span>8+ characters</span>
                     </div>
                     <div className={`flex items-center gap-1 ${passwordReqs.hasLowercase ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.hasLowercase ? "✓" : "○"}</span>
-                      <span>Lowercase letter</span>
+                      <span>Lowercase</span>
                     </div>
                     <div className={`flex items-center gap-1 ${passwordReqs.hasUppercase ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.hasUppercase ? "✓" : "○"}</span>
-                      <span>Uppercase letter</span>
+                      <span>Uppercase</span>
                     </div>
                     <div className={`flex items-center gap-1 ${passwordReqs.hasNumber ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.hasNumber ? "✓" : "○"}</span>
-                      <span>Number (0-9)</span>
+                      <span>Number</span>
                     </div>
                     <div className={`col-span-2 flex items-center gap-1 ${passwordReqs.hasSpecialChar ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.hasSpecialChar ? "✓" : "○"}</span>
-                      <span>Special character (@$!%*?&)</span>
+                      <span>Special char (@$!%*?&)</span>
                     </div>
                     <div className={`col-span-2 flex items-center gap-1 ${passwordReqs.noSpaces ? "text-green-600" : "text-slate-400"}`}>
                       <span>{passwordReqs.noSpaces ? "✓" : "○"}</span>
-                      <span>No spaces allowed</span>
+                      <span>No spaces</span>
                     </div>
                   </div>
                 </div>
               )}
               
               {getFieldError("newPassword") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("newPassword")}
                 </p>
               )}
@@ -252,16 +251,16 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
             
             {/* Confirm New Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Confirm New Password <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={16} className="sm:w-[18px] sm:h-[18px] absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type={showPasswords.confirm ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={(e) => handleFieldChange("confirmPassword", e.target.value)}
-                  className={`w-full rounded-xl border pl-10 pr-12 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                  className={`w-full rounded-lg sm:rounded-xl border pl-9 sm:pl-10 pr-9 sm:pr-12 py-1.5 sm:py-2.5 text-sm text-slate-900 outline-none focus:ring-2 transition-all ${
                     getFieldError("confirmPassword") 
                       ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                       : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
@@ -274,30 +273,30 @@ function ChangePasswordModal({ isOpen, onClose, onChangePassword }) {
                   onClick={() => togglePasswordVisibility("confirm")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPasswords.confirm ? <EyeOff size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />}
                 </button>
               </div>
               {getFieldError("confirmPassword") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("confirmPassword")}
                 </p>
               )}
             </div>
             
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="flex-1 rounded-lg sm:rounded-xl border border-slate-200 bg-white px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-lg sm:rounded-xl bg-slate-900 px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Updating..." : "Update Password"}
               </button>

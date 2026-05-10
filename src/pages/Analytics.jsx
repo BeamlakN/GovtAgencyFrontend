@@ -47,10 +47,10 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'
 const CustomTooltip = ({ active, payload, label, valuePrefix = "", valueSuffix = "" }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-lg">
-        <p className="text-sm font-semibold text-slate-900 mb-1">{label}</p>
+      <div className="bg-white border border-slate-200 rounded-lg p-2 shadow-lg">
+        <p className="text-xs font-semibold text-slate-900 mb-1">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} className="text-sm text-slate-600">
+          <p key={index} className="text-[10px] text-slate-600">
             {entry.name}: {valuePrefix}{entry.value}{valueSuffix}
           </p>
         ))}
@@ -119,11 +119,11 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center min-h-[400px]">
+      <div className="p-6">
+        <div className="flex items-center justify-center min-h-[300px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading analytics data...</p>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500 mx-auto mb-3"></div>
+            <p className="text-sm text-slate-600">Loading analytics...</p>
           </div>
         </div>
       </div>
@@ -132,10 +132,10 @@ export default function Analytics() {
 
   if (!detailed) {
     return (
-      <div className="p-8">
-        <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
-          <BarChart3 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">No analytics data available</p>
+      <div className="p-6">
+        <div className="text-center py-10 bg-white rounded-xl border border-slate-200">
+          <BarChart3 className="h-10 w-10 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">No analytics data available</p>
         </div>
       </div>
     );
@@ -165,84 +165,64 @@ export default function Analytics() {
   const rejectionRate = totalApplications > 0 ? ((detailed.applicationsByStatus?.rejected || 0) / totalApplications * 100).toFixed(1) : 0;
 
   return (
-    <div className="p-8 space-y-6 bg-gradient-to-br from-slate-50 to-white min-h-screen">
-      {/* Export Button - No Header */}
+    <div className="p-4 sm:p-6 space-y-4 bg-gradient-to-br from-slate-50 to-white min-h-screen">
+      {/* Export Button */}
       <div className="flex justify-end">
         <div className="flex gap-2">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+            className="rounded-lg border border-slate-200 bg-white px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-slate-700"
           >
-            <option value="7days">Last 7 days</option>
-            <option value="30days">Last 30 days</option>
-            <option value="90days">Last 90 days</option>
-            <option value="year">Last year</option>
+            <option value="7days">7 days</option>
+            <option value="30days">30 days</option>
+            <option value="90days">90 days</option>
+            <option value="year">Year</option>
           </select>
-          <button onClick={exportToCSV} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-            <Download size={16} /> Export Report
+          <button onClick={exportToCSV} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download size={14} className="sm:w-[16px] sm:h-[16px]" /> Export
           </button>
         </div>
       </div>
 
-      {/* Quick Insights Row - UPDATED COLORS to match system */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 p-5 text-white shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs opacity-90 uppercase tracking-wide">Unique Citizens</p>
-              <p className="text-3xl font-bold mt-2">{formatNumber(totalCitizens)}</p>
-              <p className="text-xs opacity-80 mt-1">Total citizens served</p>
-            </div>
-            <Users size={24} className="opacity-80" />
-          </div>
+      {/* Quick Insights Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 p-3 text-white shadow-sm">
+          <p className="text-[9px] opacity-90 uppercase tracking-wide">Unique Citizens</p>
+          <p className="text-lg font-bold mt-1">{formatNumber(totalCitizens)}</p>
+          <p className="text-[8px] opacity-80 mt-0.5">Total served</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 p-5 text-white shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs opacity-90 uppercase tracking-wide">Pending Review</p>
-              <p className="text-3xl font-bold mt-2">{detailed.applicationsByStatus?.under_review || 0}</p>
-              <p className="text-xs opacity-80 mt-1">Awaiting your action</p>
-            </div>
-            <Clock size={24} className="opacity-80" />
-          </div>
+        <div className="rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 p-3 text-white shadow-sm">
+          <p className="text-[9px] opacity-90 uppercase tracking-wide">Pending Review</p>
+          <p className="text-lg font-bold mt-1">{detailed.applicationsByStatus?.under_review || 0}</p>
+          <p className="text-[8px] opacity-80 mt-0.5">Awaiting action</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 text-white shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs opacity-90 uppercase tracking-wide">Paid Applications</p>
-              <p className="text-3xl font-bold mt-2">{detailed.applicationsByStatus?.paid || 0}</p>
-              <p className="text-xs opacity-80 mt-1">{totalApplications > 0 ? ((detailed.applicationsByStatus?.paid || 0) / totalApplications * 100).toFixed(1) : 0}% paid rate</p>
-            </div>
-            <DollarSign size={24} className="opacity-80" />
-          </div>
+        <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-3 text-white shadow-sm">
+          <p className="text-[9px] opacity-90 uppercase tracking-wide">Paid Applications</p>
+          <p className="text-lg font-bold mt-1">{detailed.applicationsByStatus?.paid || 0}</p>
+          <p className="text-[8px] opacity-80 mt-0.5">{totalApplications > 0 ? ((detailed.applicationsByStatus?.paid || 0) / totalApplications * 100).toFixed(1) : 0}% paid</p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-red-500 to-red-700 p-5 text-white shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs opacity-90 uppercase tracking-wide">Rejected</p>
-              <p className="text-3xl font-bold mt-2">{detailed.applicationsByStatus?.rejected || 0}</p>
-              <p className="text-xs opacity-80 mt-1">{rejectionRate}% of total</p>
-            </div>
-            <XCircle size={24} className="opacity-80" />
-          </div>
+        <div className="rounded-xl bg-gradient-to-br from-red-500 to-red-700 p-3 text-white shadow-sm">
+          <p className="text-[9px] opacity-90 uppercase tracking-wide">Rejected</p>
+          <p className="text-lg font-bold mt-1">{detailed.applicationsByStatus?.rejected || 0}</p>
+          <p className="text-[8px] opacity-80 mt-0.5">{rejectionRate}% total</p>
         </div>
       </div>
 
       {/* Applications Over Time */}
       {detailed.applicationsOverTime && detailed.applicationsOverTime.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Applications Trend</h2>
-              <p className="text-sm text-slate-500 mt-1">Daily application submissions over time</p>
+              <h2 className="text-sm font-semibold text-slate-900">Applications Trend</h2>
+              <p className="text-[10px] text-slate-500 mt-0.5">Daily submissions over time</p>
             </div>
-            <div className="flex items-center gap-2 text-sm text-emerald-600">
-              <TrendingUp size={16} />
-              <span>+23% vs last period</span>
+            <div className="flex items-center gap-1 text-[10px] text-emerald-600">
+              <TrendingUp size={12} />
+              <span>+23%</span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={detailed.applicationsOverTime}>
               <defs>
                 <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
@@ -251,8 +231,8 @@ export default function Analytics() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="date" stroke="#64748b" />
-              <YAxis stroke="#64748b" />
+              <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 10 }} />
+              <YAxis stroke="#64748b" tick={{ fontSize: 10 }} />
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="count" stroke="#3b82f6" fillOpacity={1} fill="url(#colorCount)" />
             </AreaChart>
@@ -260,51 +240,48 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Service Performance - Combined Chart */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <BarChart3 className="h-5 w-5 text-slate-600" />
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Service Performance</h2>
-            <p className="text-sm text-slate-500 mt-1">Applications and revenue by service type</p>
-          </div>
+      {/* Service Performance */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart3 className="h-4 w-4 text-slate-600" />
+          <h2 className="text-sm font-semibold text-slate-900">Service Performance</h2>
         </div>
         {applicationsByServiceData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={applicationsByServiceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <YAxis yAxisId="left" stroke="#3b82f6" label={{ value: 'Applications', angle: -90, position: 'insideLeft', fill: '#3b82f6' }} />
-              <YAxis yAxisId="right" orientation="right" stroke="#10b981" label={{ value: 'Revenue ($)', angle: 90, position: 'insideRight', fill: '#10b981' }} />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} tick={{ fontSize: 9, fill: '#64748b' }} />
+              <YAxis yAxisId="left" stroke="#3b82f6" tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fontSize: 10 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar yAxisId="left" dataKey="value" name="Applications" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 5 }} />
+              <Legend wrapperStyle={{ fontSize: '10px' }} />
+              <Bar yAxisId="left" dataKey="value" name="Apps" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-center py-12 text-slate-500">No service data available</div>
+          <div className="text-center py-8 text-sm text-slate-500">No service data available</div>
         )}
       </div>
 
       {/* Status Distribution & Revenue by Service */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Applications by Status - Donut Chart */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <PieChartIcon className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Applications by Status</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Applications by Status */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <PieChartIcon className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Applications by Status</h2>
           </div>
           {applicationsByStatusData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
                     data={applicationsByStatusData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={50}
+                    outerRadius={80}
                     labelLine={true}
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                     dataKey="value"
@@ -314,144 +291,134 @@ export default function Analytics() {
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 rounded-xl text-center">
-                  <p className="text-2xl font-bold text-emerald-600">{detailed.applicationsByStatus?.approved || 0}</p>
-                  <p className="text-xs text-slate-500">Approved</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                  <p className="text-lg font-bold text-emerald-600">{detailed.applicationsByStatus?.approved || 0}</p>
+                  <p className="text-[10px] text-slate-500">Approved</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl text-center">
-                  <p className="text-2xl font-bold text-amber-600">{detailed.applicationsByStatus?.under_review || 0}</p>
-                  <p className="text-xs text-slate-500">Under Review</p>
+                <div className="p-2 bg-slate-50 rounded-lg text-center">
+                  <p className="text-lg font-bold text-amber-600">{detailed.applicationsByStatus?.under_review || 0}</p>
+                  <p className="text-[10px] text-slate-500">Under Review</p>
                 </div>
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-slate-500">No data available</div>
+            <div className="text-center py-8 text-sm text-slate-500">No data available</div>
           )}
         </div>
 
-        {/* Revenue by Service - Horizontal Bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <DollarSign className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Revenue by Service</h2>
+        {/* Revenue by Service */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Revenue by Service</h2>
           </div>
           {revenueByServiceData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenueByServiceData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-                <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 11 }} />
+                <XAxis type="number" tickFormatter={(value) => `$${value}`} tick={{ fontSize: 9 }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9 }} />
                 <Tooltip content={<CustomTooltip valuePrefix="$" />} />
-                <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]}>
-                  {revenueByServiceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
+                <Bar dataKey="revenue" fill="#10b981" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center py-12 text-slate-500">No data available</div>
+            <div className="text-center py-8 text-sm text-slate-500">No data available</div>
           )}
         </div>
       </div>
 
       {/* Process Performance & Citizen Demographics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Process Performance */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <Activity className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Process Performance</h2>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Activity className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Process Performance</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center py-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl">
-              <Target className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <p className="text-3xl font-bold text-blue-900">{detailed.avgProcessingDays || 0}</p>
-              <p className="text-xs text-blue-700 mt-1">Avg Processing Days</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center py-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+              <Target className="h-6 w-6 text-blue-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-blue-900">{detailed.avgProcessingDays || 0}</p>
+              <p className="text-[9px] text-blue-700">Avg Days</p>
             </div>
-            <div className="text-center py-6 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl">
-              <Zap className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-              <p className="text-3xl font-bold text-emerald-900">{approvalRate}%</p>
-              <p className="text-xs text-emerald-700 mt-1">Approval Rate</p>
+            <div className="text-center py-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg">
+              <Zap className="h-6 w-6 text-emerald-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-emerald-900">{approvalRate}%</p>
+              <p className="text-[9px] text-emerald-700">Approval</p>
             </div>
-            <div className="text-center py-6 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl">
-              <Eye className="h-8 w-8 text-amber-600 mx-auto mb-2" />
-              <p className="text-3xl font-bold text-amber-900">{detailed.applicationsByStatus?.under_review || 0}</p>
-              <p className="text-xs text-amber-700 mt-1">Under Review</p>
+            <div className="text-center py-4 bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg">
+              <Eye className="h-6 w-6 text-amber-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-amber-900">{detailed.applicationsByStatus?.under_review || 0}</p>
+              <p className="text-[9px] text-amber-700">Review</p>
             </div>
-            <div className="text-center py-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl">
-              <CheckCircle className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-              <p className="text-3xl font-bold text-purple-900">{detailed.applicationsByStatus?.approved || 0}</p>
-              <p className="text-xs text-purple-700 mt-1">Approved</p>
+            <div className="text-center py-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+              <CheckCircle className="h-6 w-6 text-purple-600 mx-auto mb-1" />
+              <p className="text-xl font-bold text-purple-900">{detailed.applicationsByStatus?.approved || 0}</p>
+              <p className="text-[9px] text-purple-700">Approved</p>
             </div>
           </div>
         </div>
 
         {/* Citizen Demographics */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <Users className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Citizen Demographics</h2>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Citizens</h2>
           </div>
           {genderData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
                     data={genderData}
                     cx="50%"
                     cy="50%"
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
+                    outerRadius={60}
                     dataKey="value"
                   >
                     <Cell fill="#3b82f6" />
                     <Cell fill="#ec489a" />
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: '10px' }} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-4 p-4 bg-slate-50 rounded-xl flex justify-between items-center">
-                <span className="text-sm text-slate-600">Total Citizens Served:</span>
-                <span className="text-xl font-bold text-slate-900">{formatNumber(totalCitizens)}</span>
+              <div className="mt-3 p-2 bg-slate-50 rounded-lg flex justify-between items-center">
+                <span className="text-[10px] text-slate-600">Total Served:</span>
+                <span className="text-base font-bold text-slate-900">{formatNumber(totalCitizens)}</span>
               </div>
             </>
           ) : (
-            <div className="text-center py-12 text-slate-500">No demographic data available</div>
+            <div className="text-center py-8 text-sm text-slate-500">No data available</div>
           )}
         </div>
       </div>
 
       {/* Top Performing Services */}
       {detailed.topServices && detailed.topServices.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <Award className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Top Performing Services</h2>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Award className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-900">Top Services</h2>
           </div>
-          <div className="space-y-3">
-            {detailed.topServices.map((service, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-sm font-bold text-blue-700">{index + 1}</span>
+          <div className="space-y-2">
+            {detailed.topServices.slice(0, 5).map((service, index) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-700">{index + 1}</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{service.service}</p>
-                    <p className="text-xs text-slate-500">{service.applications} applications</p>
-                  </div>
+                  <p className="text-xs font-medium text-slate-900">{service.service}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-emerald-600">
-                    {formatCurrency(detailed.revenueByService?.[service.service] || 0)}
-                  </p>
-                  <p className="text-xs text-slate-400">revenue</p>
-                </div>
+                <p className="text-xs font-semibold text-emerald-600">
+                  {formatCurrency(detailed.revenueByService?.[service.service] || 0)}
+                </p>
               </div>
             ))}
           </div>
@@ -459,24 +426,24 @@ export default function Analytics() {
       )}
 
       {/* Summary Footer */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-4 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold">Performance Summary</h3>
-            <p className="text-sm text-slate-300 mt-1">Overall system performance at a glance</p>
+            <h3 className="text-sm font-semibold">Performance Summary</h3>
+            <p className="text-[10px] text-slate-300 mt-0.5">At a glance</p>
           </div>
-          <div className="flex gap-6">
+          <div className="flex gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold">{formatNumber(totalApplications)}</p>
-              <p className="text-xs text-slate-300">Total Applications</p>
+              <p className="text-base font-bold">{formatNumber(totalApplications)}</p>
+              <p className="text-[9px] text-slate-300">Apps</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
-              <p className="text-xs text-slate-300">Total Revenue</p>
+              <p className="text-base font-bold">{formatCurrency(totalRevenue)}</p>
+              <p className="text-[9px] text-slate-300">Revenue</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">{approvalRate}%</p>
-              <p className="text-xs text-slate-300">Success Rate</p>
+              <p className="text-base font-bold">{approvalRate}%</p>
+              <p className="text-[9px] text-slate-300">Success</p>
             </div>
           </div>
         </div>

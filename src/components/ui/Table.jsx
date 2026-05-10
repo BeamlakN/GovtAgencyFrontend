@@ -16,7 +16,7 @@ export function TR({ children, className = "" }) {
 
 export function TH({ children, className = "", ...props }) {
   return (
-    <th className={`py-3 px-4 font-semibold text-slate-700 ${className}`} {...props}>
+    <th className={`py-3 px-3 font-semibold text-slate-700 dark:text-slate-300 ${className}`} {...props}>
       {children}
     </th>
   );
@@ -24,9 +24,10 @@ export function TH({ children, className = "", ...props }) {
 
 export function TD({ children, className = "", ...props }) {
   return (
-    <td className={`py-3 px-4 text-slate-700 ${className}`} {...props}>
+    <td className={`py-3 px-3 text-slate-700 dark:text-slate-300 ${className}`} {...props}>
       {children}
     </td>
   );
 }
+
 

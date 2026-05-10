@@ -107,35 +107,37 @@ export default function AnnouncementCreateModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-[2px] px-4 overflow-y-auto">
-      <div className="mx-auto mt-24 mb-8 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+    <div className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-[2px] px-2 sm:px-3 overflow-y-auto">
+      <div className="mx-auto mt-16 sm:mt-20 md:mt-24 mb-8 w-full max-w-[95%] sm:max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl sm:rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-slate-200 bg-slate-50">
           <div>
-            <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-              <Megaphone size={18} className="text-slate-600" />
+            <h2 className="font-semibold text-slate-900 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+              <Megaphone size={16} className="sm:w-[18px] sm:h-[18px] text-slate-600" />
               Create Announcement
             </h2>
-            <p className="text-sm text-slate-500">Add a new announcement with an optional image</p>
+            <p className="text-xs sm:text-sm text-slate-500">Add a new announcement with an optional image</p>
           </div>
           <button
             onClick={onClose}
             className="p-1 rounded-lg hover:bg-slate-200 transition-colors"
           >
-            <X size={18} className="text-slate-500" />
+            <X size={16} className="sm:w-[18px] sm:h-[18px] text-slate-500" />
           </button>
         </div>
 
-        <form onSubmit={handleFormSubmit} className="p-6">
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        {/* Form */}
+        <form onSubmit={handleFormSubmit} className="p-3 sm:p-4 md:p-5">
+          <div className="grid gap-3 md:grid-cols-2">
             {/* Title Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
                 value={form.title || ""}
                 onChange={(e) => handleFieldChange("title", e.target.value)}
-                className={`w-full rounded-lg border px-3 py-2.5 bg-white focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm bg-white focus:outline-none focus:ring-2 transition-colors ${
                   getFieldError("title") 
                     ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                     : "border-slate-300 focus:ring-slate-400 focus:border-transparent"
@@ -144,23 +146,23 @@ export default function AnnouncementCreateModal({
                 required
               />
               {getFieldError("title") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("title")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-400">3-200 characters, cannot start or end with spaces</p>
+              <p className="mt-0.5 text-[9px] sm:text-xs text-slate-400">3-200 characters, no spaces at ends</p>
             </div>
 
             {/* Target Role Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Target Role <span className="text-red-500">*</span>
               </label>
               <select
                 value={form.target_role || "citizen"}
                 onChange={(e) => setForm((prev) => ({ ...prev, target_role: e.target.value }))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
+                className="w-full rounded-lg border border-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
                 required
               >
                 {TARGET_ROLES.map((role) => (
@@ -173,15 +175,15 @@ export default function AnnouncementCreateModal({
           </div>
 
           {/* Content Field */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+          <div className="mt-3">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
               Content <span className="text-red-500">*</span>
             </label>
             <textarea
               value={form.content || ""}
               onChange={(e) => handleFieldChange("content", e.target.value)}
-              rows={5}
-              className={`w-full rounded-lg border px-3 py-2.5 bg-white focus:outline-none focus:ring-2 transition-colors resize-none ${
+              rows={4}
+              className={`w-full rounded-lg border px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm bg-white focus:outline-none focus:ring-2 transition-colors resize-none ${
                 getFieldError("content") 
                   ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                   : "border-slate-300 focus:ring-slate-400 focus:border-transparent"
@@ -190,24 +192,24 @@ export default function AnnouncementCreateModal({
               required
             />
             {getFieldError("content") && (
-              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle size={12} />
+              <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                 {getFieldError("content")}
               </p>
             )}
-            <p className="mt-1 text-xs text-slate-400">10-5000 characters</p>
+            <p className="mt-0.5 text-[9px] sm:text-xs text-slate-400">10-5000 characters</p>
           </div>
 
           {/* Image Upload Field */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+          <div className="mt-3">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
               Image (Optional)
             </label>
             
             {!form.image_url ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
+                className={`relative border-2 border-dashed rounded-lg p-3 sm:p-4 text-center cursor-pointer transition-all ${
                   uploadingImage
                     ? 'border-slate-300 bg-slate-50'
                     : 'border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
@@ -223,24 +225,24 @@ export default function AnnouncementCreateModal({
                 />
                 
                 {uploadingImage ? (
-                  <div className="space-y-3">
-                    <Upload className="h-8 w-8 text-slate-400 mx-auto animate-bounce" />
+                  <div className="space-y-2">
+                    <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 mx-auto animate-bounce" />
                     <div>
-                      <div className="text-sm font-medium text-slate-700">Uploading...</div>
-                      <div className="w-48 mx-auto mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="text-xs sm:text-sm font-medium text-slate-700">Uploading...</div>
+                      <div className="w-32 sm:w-40 mx-auto mt-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-slate-600 rounded-full transition-all duration-300"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">{Math.round(uploadProgress)}%</div>
+                      <div className="text-[10px] sm:text-xs text-slate-500 mt-1">{Math.round(uploadProgress)}%</div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <Image className="h-8 w-8 text-slate-400 mx-auto" />
-                    <div className="text-sm font-medium text-slate-700">Click to upload image</div>
-                    <div className="text-xs text-slate-500">JPEG, PNG, GIF, WEBP up to 5MB</div>
+                  <div className="space-y-1.5">
+                    <Image className="h-5 w-5 sm:h-6 sm:w-6 text-slate-400 mx-auto" />
+                    <div className="text-xs sm:text-sm font-medium text-slate-700">Click to upload image</div>
+                    <div className="text-[9px] sm:text-xs text-slate-500">JPEG, PNG, GIF, WEBP up to 5MB</div>
                   </div>
                 )}
               </div>
@@ -250,20 +252,20 @@ export default function AnnouncementCreateModal({
                   <img
                     src={form.image_url}
                     alt="Announcement preview"
-                    className="w-full h-48 object-cover"
+                    className="w-full h-32 sm:h-40 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 bg-white rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white rounded-lg text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                     >
                       Change
                     </button>
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="px-3 py-1.5 bg-red-600 rounded-lg text-sm font-medium text-white hover:bg-red-700 transition-colors"
+                      className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-600 rounded-lg text-xs sm:text-sm font-medium text-white hover:bg-red-700 transition-colors"
                     >
                       Remove
                     </button>
@@ -281,28 +283,28 @@ export default function AnnouncementCreateModal({
             )}
             
             {form.image_url && !uploadingImage && (
-              <p className="text-xs text-slate-500 mt-2 truncate">
-                Current image: {form.image_url.split('/').pop()}
+              <p className="text-[9px] sm:text-xs text-slate-500 mt-1.5 truncate">
+                Current: {form.image_url.split('/').pop().slice(0, 40)}...
               </p>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-4 sm:mt-5 flex justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="rounded-lg border border-slate-300 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || uploadingImage}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <CheckCircle size={16} />
-              {loading ? "Publishing..." : "Publish Announcement"}
+              <CheckCircle size={14} className="sm:w-[16px] sm:h-[16px]" />
+              {loading ? "Publishing..." : "Publish"}
             </button>
           </div>
         </form>

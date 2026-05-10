@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { User, X, Save, Phone, AlertCircle, Camera, Upload } from "lucide-react";
-import { toastError } from "@/components/ui/toast";
+import { toastError, toastSuccess } from "@/components/ui/toast";
 import { validateField, getValidationRules } from "@/utils/validation";
 import { supabase } from "@/lib/supabase";
 
@@ -162,42 +162,42 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="absolute top-16 right-4 w-full max-w-lg">
+      <div className="absolute top-16 right-4 w-full max-w-[90%] sm:max-w-lg">
         <div
           ref={modalRef}
-          className="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all animate-in zoom-in-95 duration-200"
+          className="relative transform overflow-hidden rounded-xl sm:rounded-2xl bg-white shadow-2xl transition-all"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-3 sm:px-4 py-2.5 sm:py-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-white">Edit Profile</h3>
-                <p className="text-sm text-slate-300 mt-0.5">Update your profile information</p>
+                <h3 className="text-sm sm:text-base font-bold text-white">Edit Profile</h3>
+                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">Update your profile information</p>
               </div>
               <button 
                 onClick={onClose} 
                 className="text-white/70 hover:text-white transition-colors rounded-lg p-1 hover:bg-white/10"
               >
-                <X size={20} />
+                <X size={18} className="sm:w-[20px] sm:h-[20px]" />
               </button>
             </div>
           </div>
           
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
             {/* Profile Picture */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <Camera size={14} className="text-slate-400" />
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <Camera size={12} className="sm:w-[14px] sm:h-[14px] text-slate-400" />
                   Profile Picture
                 </span>
               </label>
               
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {/* Avatar Preview */}
                 <div className="relative">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center overflow-hidden">
+                  <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center overflow-hidden">
                     {formData.image_url ? (
                       <img 
                         src={formData.image_url} 
@@ -205,7 +205,7 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-2xl font-bold text-white">
+                      <span className="text-lg sm:text-xl font-bold text-white">
                         {(formData.name?.charAt(0) || "U").toUpperCase()}
                       </span>
                     )}
@@ -214,10 +214,10 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                      className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
                       title="Remove image"
                     >
-                      <X size={12} />
+                      <X size={10} className="sm:w-[12px] sm:h-[12px]" />
                     </button>
                   )}
                 </div>
@@ -236,30 +236,30 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingImage}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 text-xs sm:text-sm"
                   >
                     {uploadingImage ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-900"></div>
-                        <span className="text-sm">Uploading... {Math.round(uploadProgress)}%</span>
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-slate-900"></div>
+                        <span>{Math.round(uploadProgress)}%</span>
                       </>
                     ) : (
                       <>
-                        <Upload size={16} />
-                        <span className="text-sm">Upload Photo</span>
+                        <Upload size={14} className="sm:w-[16px] sm:h-[16px]" />
+                        <span>Upload Photo</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-2">JPEG, PNG, GIF, WEBP up to 2MB</p>
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2">JPEG, PNG, GIF, WEBP up to 2MB</p>
             </div>
 
             {/* Full Name - Editable */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <User size={14} className="text-slate-400" />
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <User size={12} className="sm:w-[14px] sm:h-[14px] text-slate-400" />
                   Full Name <span className="text-red-500">*</span>
                 </span>
               </label>
@@ -267,7 +267,7 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleFieldChange("name", e.target.value)}
-                className={`w-full rounded-xl border px-4 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                className={`w-full rounded-lg sm:rounded-xl border px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-sm text-slate-900 outline-none focus:ring-2 transition-all ${
                   getFieldError("name") 
                     ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                     : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
@@ -276,19 +276,19 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                 required
               />
               {getFieldError("name") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("name")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-400">3-100 characters, letters and spaces only</p>
+              <p className="mt-0.5 text-[9px] sm:text-xs text-slate-400">3-100 characters, letters and spaces only</p>
             </div>
             
             {/* Phone Number - Editable */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                <span className="flex items-center gap-2">
-                  <Phone size={14} className="text-slate-400" />
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <Phone size={12} className="sm:w-[14px] sm:h-[14px] text-slate-400" />
                   Phone Number
                 </span>
               </label>
@@ -296,7 +296,7 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                 type="tel"
                 value={formData.phone_number}
                 onChange={(e) => handleFieldChange("phone_number", e.target.value)}
-                className={`w-full rounded-xl border px-4 py-2.5 text-slate-900 outline-none focus:ring-2 transition-all ${
+                className={`w-full rounded-lg sm:rounded-xl border px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-sm text-slate-900 outline-none focus:ring-2 transition-all ${
                   getFieldError("phone_number") 
                     ? "border-red-500 focus:ring-red-500 focus:border-red-500" 
                     : "border-slate-200 focus:border-slate-400 focus:ring-slate-100"
@@ -304,29 +304,29 @@ function EditProfileModal({ isOpen, onClose, profile, onSave }) {
                 placeholder="e.g., +251 911 123456"
               />
               {getFieldError("phone_number") && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle size={12} />
+                <p className="mt-1 text-[10px] sm:text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={10} className="sm:w-[12px] sm:h-[12px]" />
                   {getFieldError("phone_number")}
                 </p>
               )}
-              <p className="text-xs text-slate-400 mt-1">Enter your phone number (optional)</p>
+              <p className="mt-0.5 text-[9px] sm:text-xs text-slate-400">Enter your phone number (optional)</p>
             </div>
             
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="flex-1 rounded-lg sm:rounded-xl border border-slate-200 bg-white px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || uploadingImage}
-                className="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                className="flex-1 rounded-lg sm:rounded-xl bg-slate-900 px-2.5 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5 sm:gap-2"
               >
-                <Save size={16} />
+                <Save size={14} className="sm:w-[16px] sm:h-[16px]" />
                 {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>

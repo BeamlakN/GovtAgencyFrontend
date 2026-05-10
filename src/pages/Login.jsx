@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { loginAgency, forgotPassword } from "../api/auth";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 
 export default function Login() {
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -76,11 +78,11 @@ export default function Login() {
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
     if (!email) {
-      setEmailError("Email is required");
+      setEmailError(t("login.emailRequired"));
       return false;
     }
     if (!emailRegex.test(email)) {
-      setEmailError("Please enter a valid email address");
+      setEmailError(t("login.emailInvalid"));
       return false;
     }
     setEmailError("");
@@ -89,11 +91,11 @@ export default function Login() {
 
   const validatePassword = (password) => {
     if (!password) {
-      setPasswordError("Password is required");
+      setPasswordError(t("login.passwordRequired"));
       return false;
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setPasswordError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      setPasswordError(t("login.passwordMin", { min: MIN_PASSWORD_LENGTH }));
       return false;
     }
     setPasswordError("");
@@ -102,12 +104,14 @@ export default function Login() {
 
   const isAccountLocked = () => {
     if (lockoutTime && lockoutTime > Date.now()) {
-      const minutesLeft = Math.ceil((lockoutTime - Date.now()) / 60000);
-      const secondsLeft = Math.ceil((lockoutTime - Date.now()) / 1000);
-      const timeString = minutesLeft > 0 
-        ? `${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}`
-        : `${secondsLeft} second${secondsLeft !== 1 ? 's' : ''}`;
-      setError(`Too many failed attempts. Please try again in ${timeString}.`);
+      const msLeft = lockoutTime - Date.now();
+      const minutesLeft = Math.ceil(msLeft / 60000);
+      const secondsLeft = Math.ceil(msLeft / 1000);
+      const timeString =
+        minutesLeft > 0
+          ? t("login.waitMinutes", { count: minutesLeft })
+          : t("login.waitSeconds", { count: secondsLeft });
+      setError(t("login.tooManyAttempts", { time: timeString }));
       return true;
     }
     return false;
@@ -141,7 +145,7 @@ export default function Login() {
       const token = data.token;
 
       if (user.banned) {
-        setError("Account is banned. Please contact system administrator.");
+        setError(t("login.accountBanned"));
         setLoading(false);
         return;
       }
@@ -151,7 +155,7 @@ export default function Login() {
       if (user.role === "super_admin" && !user.bureauId) {
         console.log("Global Super Admin Access");
       } else if (user.bureauId !== TARGET_BUREAU_ID) {
-        setError("Access Denied: Not your agency");
+        setError(t("login.accessDenied"));
         setLoading(false);
         incrementAttempts();
         return;
@@ -166,9 +170,9 @@ export default function Login() {
       incrementAttempts();
       
       if (err.message.includes("Invalid credentials") || err.message.includes("Invalid email or password")) {
-        setError("Invalid email or password. Please try again.");
+        setError(t("login.invalidCredentials"));
       } else {
-        setError(err.message || "Login failed. Please try again.");
+        setError(err.message || t("login.loginFailed"));
       }
     }
 
@@ -184,23 +188,25 @@ export default function Login() {
       const lockoutExpiry = Date.now() + (LOCKOUT_DURATION_MINUTES * 60 * 1000);
       setLockoutTime(lockoutExpiry);
       localStorage.setItem("loginLockout", lockoutExpiry.toString());
-      setError(`Too many failed login attempts. Account locked for ${LOCKOUT_DURATION_MINUTES} minutes.`);
+      setError(t("login.accountLockedMinutes", { minutes: LOCKOUT_DURATION_MINUTES }));
       setAttempts(0);
       localStorage.removeItem("loginAttempts");
     } else {
       const remainingAttempts = MAX_ATTEMPTS - newAttempts;
-      setError(`Invalid credentials. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining before lockout.`);
+      setError(
+        t("login.attemptsLeftBeforeLockout", { count: remainingAttempts })
+      );
     }
   };
 
   const validateForgotEmail = (email) => {
     const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
     if (!email) {
-      setForgotError("Email is required");
+      setForgotError(t("login.forgotEmailRequired"));
       return false;
     }
     if (!emailRegex.test(email)) {
-      setForgotError("Please enter a valid email address");
+      setForgotError(t("login.emailInvalid"));
       return false;
     }
     setForgotError("");
@@ -222,9 +228,9 @@ export default function Login() {
       if (res.message) {
         setForgotMessage(res.message);
       } else if (res.success) {
-        setForgotMessage("Password reset link has been sent to your email address.");
+        setForgotMessage(t("login.resetSent"));
       } else {
-        setForgotMessage("If an account exists with this email, you will receive a reset link.");
+        setForgotMessage(t("login.resetGeneric"));
       }
       
       setForgotEmail("");
@@ -238,7 +244,7 @@ export default function Login() {
       
     } catch (err) {
       console.error("Forgot password error:", err);
-      setForgotError(err.message || "Failed to send reset link. Please try again.");
+      setForgotError(err.message || t("login.forgotFailed"));
     } finally {
       setForgotLoading(false);
     }
@@ -253,57 +259,69 @@ export default function Login() {
     return `${seconds}s`;
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-4 relative overflow-hidden">
-      <div className="absolute w-[400px] h-[400px] bg-green-500/20 blur-3xl rounded-full top-[-120px] left-[-120px]" />
-      <div className="absolute w-[400px] h-[400px] bg-blue-500/20 blur-3xl rounded-full bottom-[-120px] right-[-120px]" />
+  const lang = i18n.language?.startsWith("am") ? "am" : "en";
 
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 z-10">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto bg-green-600/20 rounded-full flex items-center justify-center mb-3">
-            <span className="text-green-400 text-xl">🏛️</span>
+  return (
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-800 px-4 py-8">
+      <div className="absolute top-4 end-4 flex items-center gap-2">
+        <label htmlFor="login-lang" className="sr-only">{t("login.languageLabel")}</label>
+        <select
+          id="login-lang"
+          value={lang}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
+          className="rounded-lg border border-slate-600 bg-slate-900/80 text-slate-100 text-xs py-1.5 px-2 outline-none focus:ring-2 focus:ring-slate-400"
+        >
+          <option value="en">English</option>
+          <option value="am">አማርኛ</option>
+        </select>
+      </div>
+
+      <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-lg p-6">
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 mx-auto bg-slate-900 rounded-xl flex items-center justify-center mb-3">
+            <span className="text-white text-lg">🏛️</span>
           </div>
 
-          <h1 className="text-2xl font-semibold text-white">
-            Transport Agency Portal
+          <h1 className="text-lg font-semibold text-slate-900">
+            {t("login.title")}
           </h1>
 
-          <p className="text-slate-300 text-sm mt-1">
-            Secure Government Access System
+          <p className="text-slate-500 text-sm mt-1">
+            {t("login.subtitle")}
           </p>
           
           {attempts > 0 && !lockoutTime && attempts < MAX_ATTEMPTS && (
-            <div className="mt-3 text-xs text-amber-400 bg-amber-500/10 py-1 px-2 rounded-lg inline-block">
-              {MAX_ATTEMPTS - attempts} login attempt{MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} remaining
+            <div className="mt-3 text-xs text-amber-600 bg-amber-50 py-1 px-2 rounded-lg inline-block">
+              {t("login.attemptsRemainingBanner", { count: MAX_ATTEMPTS - attempts })}
             </div>
           )}
           
           {lockoutTime && lockoutTime > Date.now() && (
-            <div className="mt-3 text-xs text-red-400 bg-red-500/10 py-1 px-2 rounded-lg inline-block">
-              Locked for {formatRemainingTime()}
+            <div className="mt-3 text-xs text-red-600 bg-red-50 py-1 px-2 rounded-lg inline-block">
+              {t("login.lockedFor", { time: formatRemainingTime() })}
             </div>
           )}
         </div>
 
         {error && (
-          <div className="bg-red-500/20 border border-red-400 text-red-200 text-sm p-3 rounded-lg mb-5 flex items-start gap-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg mb-4 flex items-start gap-2">
             <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <div className="relative">
-              <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
+              <Mail className="absolute left-3 top-2.5 text-slate-400" size={16} />
               <input
                 type="email"
-                className={`w-full pl-10 pr-3 py-3 rounded-lg border text-white outline-none focus:ring-2 transition-all ${
+                className={`w-full pl-9 pr-3 py-2.5 rounded-lg border text-slate-900 outline-none focus:ring-2 transition-all text-sm ${
                   emailError
-                    ? "border-red-500 focus:ring-red-500 bg-red-500/10"
-                    : "border-white/20 focus:ring-green-500 bg-white/10"
+                    ? "border-red-300 focus:ring-red-500 bg-red-50"
+                    : "border-slate-200 focus:ring-slate-900 bg-white"
                 }`}
-                placeholder="Enter your email"
+                placeholder={t("login.emailPlaceholder")}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -315,21 +333,21 @@ export default function Login() {
               />
             </div>
             {emailError && (
-              <p className="text-red-400 text-xs mt-1 ml-1">{emailError}</p>
+              <p className="text-red-600 text-xs mt-1 ml-1">{emailError}</p>
             )}
           </div>
 
           <div>
             <div className="relative">
-              <Lock className="absolute left-3 top-3.5 text-slate-400" size={18} />
+              <Lock className="absolute left-3 top-2.5 text-slate-400" size={16} />
               <input
                 type={showPassword ? "text" : "password"}
-                className={`w-full pl-10 pr-10 py-3 rounded-lg border text-white outline-none focus:ring-2 transition-all ${
+                className={`w-full pl-9 pr-9 py-2.5 rounded-lg border text-slate-900 outline-none focus:ring-2 transition-all text-sm ${
                   passwordError
-                    ? "border-red-500 focus:ring-red-500 bg-red-500/10"
-                    : "border-white/20 focus:ring-green-500 bg-white/10"
+                    ? "border-red-300 focus:ring-red-500 bg-red-50"
+                    : "border-slate-200 focus:ring-slate-900 bg-white"
                 }`}
-                placeholder={`Enter your password (min. ${MIN_PASSWORD_LENGTH} characters)`}
+                placeholder={t("login.passwordPlaceholder", { min: MIN_PASSWORD_LENGTH })}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -343,17 +361,17 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-white transition-colors"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
             {passwordError && (
-              <p className="text-red-400 text-xs mt-1 ml-1">{passwordError}</p>
+              <p className="text-red-600 text-xs mt-1 ml-1">{passwordError}</p>
             )}
             {!passwordError && password && (
-              <p className="text-green-400 text-xs mt-1 ml-1 flex items-center gap-1">
-                ✓ Password meets requirements
+              <p className="text-green-600 text-xs mt-1 ml-1 flex items-center gap-1">
+                ✓ {t("login.passwordOk")}
               </p>
             )}
           </div>
@@ -362,15 +380,15 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowForgot(true)}
-              className="text-sm text-green-400 hover:underline transition-all"
+              className="text-sm text-slate-600 hover:text-slate-800 hover:underline transition-all"
               disabled={!!lockoutTime}
             >
-              Forgot Password?
+              {t("login.forgotPassword")}
             </button>
             
             {attempts > 0 && !lockoutTime && (
               <span className="text-xs text-amber-400">
-                {MAX_ATTEMPTS - attempts} attempts left
+                {t("login.attemptsLeftShort", { count: MAX_ATTEMPTS - attempts })}
               </span>
             )}
           </div>
@@ -378,49 +396,49 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || !!lockoutTime}
-            className={`w-full font-semibold py-3 rounded-lg transition-all ${
+            className={`w-full font-semibold py-2.5 rounded-lg transition-all text-sm ${
               loading || lockoutTime
-                ? "bg-gray-600 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
+                ? "bg-slate-400 cursor-not-allowed"
+                : "bg-slate-900 hover:bg-slate-800"
             } text-white`}
           >
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Signing in...
+                {t("login.signingIn")}
               </div>
             ) : lockoutTime ? (
-              "Account Locked"
+              t("login.accountLocked")
             ) : (
-              "Sign In"
+              t("login.signIn")
             )}
           </button>
         </form>
 
         <p className="text-xs text-center text-slate-400 mt-6">
-          © 2026 Transport Agency. All rights reserved.
+          {t("login.copyright")}
         </p>
       </div>
 
       {/* Forgot Password Modal */}
       {showForgot && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 p-6 rounded-xl w-full max-w-sm border border-white/10 shadow-2xl">
-            <h2 className="text-white text-lg font-semibold mb-4">
-              Reset Password
+          <div className="bg-white p-6 rounded-xl w-full max-w-sm border border-slate-200 shadow-2xl">
+            <h2 className="text-slate-900 text-base font-semibold mb-4">
+              {t("login.resetPassword")}
             </h2>
             
-            <p className="text-slate-400 text-sm mb-4">
-              Enter your email address and we'll send you a link to reset your password.
+            <p className="text-slate-600 text-sm mb-4">
+              {t("login.resetDescription")}
             </p>
 
             <input
               type="email"
-              placeholder="Enter your email"
-              className={`w-full p-3 rounded-lg text-white outline-none focus:ring-2 transition-all ${
+              placeholder={t("login.emailPlaceholder")}
+              className={`w-full p-3 rounded-lg text-slate-900 outline-none focus:ring-2 transition-all ${
                 forgotError
-                  ? "border-red-500 focus:ring-red-500 bg-red-500/10"
-                  : "border border-white/20 focus:ring-green-500 bg-white/10"
+                  ? "border-red-300 focus:ring-red-500 bg-red-50"
+                  : "border border-slate-200 focus:ring-slate-900 bg-white"
               }`}
               value={forgotEmail}
               onChange={(e) => {
@@ -431,12 +449,12 @@ export default function Login() {
             />
             
             {forgotError && (
-              <p className="text-red-400 text-xs mt-2">{forgotError}</p>
+              <p className="text-red-600 text-xs mt-2">{forgotError}</p>
             )}
             
             {forgotMessage && (
-              <div className="mt-3 p-3 bg-green-500/20 border border-green-400 rounded-lg">
-                <p className="text-green-400 text-sm">{forgotMessage}</p>
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-600 text-sm">{forgotMessage}</p>
               </div>
             )}
 
@@ -444,15 +462,15 @@ export default function Login() {
               <button
                 onClick={handleForgotPassword}
                 disabled={forgotLoading}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="flex-1 bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 {forgotLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Sending...
+                    {t("login.sending")}
                   </div>
                 ) : (
-                  "Send Reset Link"
+                  t("login.sendResetLink")
                 )}
               </button>
 
@@ -463,9 +481,9 @@ export default function Login() {
                   setForgotError("");
                   setForgotEmail("");
                 }}
-                className="flex-1 bg-slate-700 text-white py-2 rounded-lg hover:bg-slate-600 transition-colors"
+                className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg hover:bg-slate-300 transition-colors"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

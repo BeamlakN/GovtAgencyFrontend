@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
-import { Activity, Building2, ChevronDown, FileText, Home, LogOut, Settings, Users, Wrench, BarChart3, IdCard, MessageSquare } from "lucide-react";
+import { 
+  Activity, Building2, ChevronDown, FileText, Home, LogOut, Settings, 
+  Users, Wrench, BarChart3, MessageSquare, Menu,IdCard
+} from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getTransportServices } from "@/api/transportService";
 
 const SERVICES_UPDATED_EVENT = "agency-services-updated";
 
-export default function Sidebar() {
+export default function Sidebar({ isCollapsed, onToggleCollapse }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [showApplications, setShowApplications] = useState(true);
@@ -14,27 +19,14 @@ export default function Sidebar() {
 
   const loadApplicationItems = async () => {
     try {
-      // Fetch actual registered services from the database
       const services = await getTransportServices();
-
-      
-      // Transform services into application items
-      const items = (services || []).map((service) => {
-        // Get the service name (priority: service_name, name, or fallback)
-        const serviceName = service.service_name || service.name || "";
-        // Create a key from the service name (lowercase with underscores)
-        const key = serviceName.toLowerCase().replace(/ /g, "_");
-        
-        return {
-          id: service.id || service._id || service.service_id,
-          key: key,
-          label: serviceName,
-        };
-      });
-      
+      const items = (services || []).map((service) => ({
+        id: service.id || service._id || service.service_id,
+        key: (service.service_name || service.name || "").toLowerCase().replace(/ /g, "_"),
+        label: service.service_name || service.name || "",
+      }));
       setApplicationItems(items);
     } catch (error) {
-      console.error("Failed to load services for sidebar:", error);
       setApplicationItems([]);
     }
   };
@@ -46,25 +38,15 @@ export default function Sidebar() {
     return () => window.removeEventListener(SERVICES_UPDATED_EVENT, onUpdated);
   }, []);
 
-  // Determine which application type should be highlighted based on current path
   useEffect(() => {
     const path = location.pathname;
     const searchParams = new URLSearchParams(location.search);
-    
-    // If we're on the applications list page, get the type from URL params
     if (path === "/applications") {
-      const typeFromUrl = searchParams.get("type");
-      setSelectedApplicationType(typeFromUrl);
-    } 
-    // If we're on an application review page, extract the service type from the application data
-    else if (path.match(/^\/applications\/[^/]+\/review$/)) {
+      setSelectedApplicationType(searchParams.get("type"));
+    } else if (path.match(/^\/applications\/[^/]+\/review$/)) {
       const storedType = sessionStorage.getItem(`app_${path.split('/')[2]}_type`);
-      if (storedType) {
-        setSelectedApplicationType(storedType);
-      }
-    }
-    // For other pages, clear the selected application type
-    else {
+      if (storedType) setSelectedApplicationType(storedType);
+    } else {
       setSelectedApplicationType(null);
     }
   }, [location]);
@@ -75,196 +57,123 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  // Function to check if an application link is active
   const isApplicationActive = (itemKey) => {
     const path = location.pathname;
     const searchParams = new URLSearchParams(location.search);
-    
-    // Check if we're on the applications list page with matching type
-    if (path === "/applications" && searchParams.get("type") === itemKey) {
-      return true;
-    }
-    
-    // Check if we're on a review page for this type
-    if (path.match(/^\/applications\/[^/]+\/review$/)) {
-      return selectedApplicationType === itemKey;
-    }
-    
+    if (path === "/applications" && searchParams.get("type") === itemKey) return true;
+    if (path.match(/^\/applications\/[^/]+\/review$/)) return selectedApplicationType === itemKey;
     return false;
   };
 
+  const NavItem = ({ to, icon: Icon, label }) => {
+    const isActive = location.pathname === to;
+    return (
+      <NavLink
+        to={to}
+        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors ${
+          isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
+        } ${isCollapsed ? "justify-center" : ""}`}
+        title={isCollapsed ? label : ""}
+      >
+        <Icon size={18} className="flex-shrink-0" />
+        {!isCollapsed && <span className="text-sm">{label}</span>}
+      </NavLink>
+    );
+  };
+
   return (
-    <aside className="fixed top-0 left-0 w-72 h-full bg-slate-900 text-slate-100 border-r border-slate-800 p-6 flex flex-col overflow-y-auto z-30">
-      <div className="mb-8 text-center">
-        <div className="h-16 w-16 mx-auto rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center">
-          <Building2 size={30} className="text-slate-200" />
+    <aside className={`fixed top-0 left-0 h-full bg-slate-900 text-slate-100 border-r border-slate-800 flex flex-col z-30 transition-all duration-300 ${
+      isCollapsed ? "w-16" : "w-64"
+    }`}>
+      {/* Logo Section */}
+      <div className={`mb-6 text-center pt-5 flex-shrink-0 ${isCollapsed ? "px-2" : "px-3"}`}>
+        <div className={`mx-auto rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center transition-all ${
+          isCollapsed ? "h-10 w-10" : "h-12 w-12"
+        }`}>
+          <Building2 size={isCollapsed ? 20 : 24} className="text-slate-200" />
         </div>
-        <h1 className="text-2xl font-semibold mt-3">Transport Agency Dashboard</h1>
+        {!isCollapsed && (
+          <h1 className="text-xs font-semibold mt-2">{t("nav.brand")}</h1>
+        )}
       </div>
 
-      <nav className="space-y-2 flex-1">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <Home size={18} /> Dashboard
-        </NavLink>
+      {/* Toggle Button */}
+      <button
+        onClick={onToggleCollapse}
+        className="absolute -right-2.5 top-16 bg-slate-800 rounded-full p-1.5 border border-slate-700 hover:bg-slate-700 transition-all z-40 shadow-md"
+      >
+        <Menu size={12} className="text-slate-300" />
+      </button>
 
-        <NavLink
-          to="/staff"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <Users size={18} /> Staff
-        </NavLink>
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <nav className={`space-y-1 ${isCollapsed ? "px-2" : "px-3"} pb-3`}>
+          <NavItem to="/dashboard" icon={Home} label={t("nav.dashboard")} />
+          <NavItem to="/staff" icon={Users} label={t("nav.staff")} />
+          <NavItem to="/services" icon={Wrench} label={t("nav.services")} />
+          <NavItem to="/announcements" icon={FileText} label={t("nav.announcements")} />
+          <NavItem to="/analytics" icon={BarChart3} label={t("nav.analytics")} />
+          <NavItem to="/suggestions" icon={MessageSquare} label={t("nav.suggestions")} />
+          <NavItem to="/license-onboarding" icon={IdCard} label={t("nav.licenseOnboarding")} />
+          <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
+          <NavItem to="/audit-logs" icon={Activity} label={t("nav.auditLogs")} />
 
-        <NavLink
-          to="/services"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <span className="flex items-center gap-3">
-            <Wrench size={18} /> Services
-          </span>
-        </NavLink>
+          {/* Applications Dropdown */}
+          <div className="rounded-lg border border-slate-800">
+            <button
+              type="button"
+              onClick={() => !isCollapsed && setShowApplications((prev) => !prev)}
+              className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 transition-colors ${
+                location.pathname.startsWith("/applications")
+                  ? "bg-slate-700 text-white"
+                  : "text-slate-300 hover:bg-slate-800"
+              } ${isCollapsed ? "justify-center" : "justify-between"}`}
+              title={isCollapsed ? t("nav.applications") : ""}
+            >
+              <span className="flex items-center gap-2.5">
+                <FileText size={18} />
+                {!isCollapsed && <span className="text-sm">{t("nav.applications")}</span>}
+              </span>
+              {!isCollapsed && (
+                <ChevronDown size={14} className={`transition-transform ${showApplications ? "rotate-180" : "rotate-0"}`} />
+              )}
+            </button>
 
-        <NavLink
-          to="/announcements"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <span className="flex items-center gap-3">
-            <FileText size={18} /> Announcements
-          </span>
-        </NavLink>
-
-        <NavLink
-          to="/analytics"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <BarChart3 size={18} /> Analytics
-        </NavLink>
-
-        {/* Suggestions & Feedback Link */}
-        <NavLink
-          to="/suggestions"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <MessageSquare size={18} /> Suggestions & Feedback
-        </NavLink>
-
-        {/* License Onboarding Link */}
-        <NavLink
-          to="/license-onboarding"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <IdCard size={18} /> License Onboarding
-        </NavLink>
-
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <span className="flex items-center gap-3">
-            <Settings size={18} /> Settings
-          </span>
-        </NavLink>
-
-        <NavLink
-          to="/audit-logs"
-          className={({ isActive }) =>
-            `w-full text-left flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-              isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
-            }`
-          }
-        >
-          <Activity size={18} /> Audit Logs
-        </NavLink>
-
-        <div className="rounded-lg border border-slate-800">
-          <button
-            type="button"
-            onClick={() => setShowApplications((prev) => !prev)}
-            className={`w-full text-left flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors ${
-              location.pathname.startsWith("/applications")
-                ? "bg-slate-700 text-white"
-                : "text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <FileText size={18} />
-              Applications
-            </span>
-            <ChevronDown
-              size={16}
-              className={`transition-transform ${showApplications ? "rotate-180" : "rotate-0"}`}
-            />
-          </button>
-
-          {showApplications && (
-            <div className="px-2 pb-2 space-y-1">
-              {applicationItems.length === 0 ? (
-                <div className="text-slate-400 text-xs px-3 py-2">
-                  No services registered
-                </div>
-              ) : (
-                applicationItems.map((item) => {
-                  const isActive = isApplicationActive(item.key);
-                  return (
+            {!isCollapsed && showApplications && (
+              <div className="px-2 pb-2 space-y-0.5">
+                {applicationItems.length === 0 ? (
+                  <div className="text-slate-400 text-xs px-3 py-1.5">{t("nav.noServicesRegistered")}</div>
+                ) : (
+                  applicationItems.map((item) => (
                     <Link
                       key={item.id || item.key}
                       to={`/applications?type=${item.key}`}
-                      className={`block rounded-md px-3 py-2 text-sm transition-colors capitalize ${
-                        isActive ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
+                      className={`block rounded-md px-3 py-1.5 text-xs transition-colors capitalize truncate ${
+                        isApplicationActive(item.key) ? "bg-slate-700 text-white" : "text-slate-300 hover:bg-slate-800"
                       }`}
                     >
                       {item.label}
                     </Link>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-      </nav>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </nav>
+      </div>
 
-      <div className="pt-6 mt-auto">
+      {/* Logout Button */}
+      <div className={`pt-4 mt-auto flex-shrink-0 ${isCollapsed ? "px-2" : "px-3"} pb-4 border-t border-slate-800`}>
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-slate-200 hover:bg-slate-700 transition-colors"
+          className={`w-full flex items-center gap-2.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-slate-200 hover:bg-slate-700 transition-colors ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+          title={isCollapsed ? t("nav.logout") : ""}
         >
           <LogOut size={16} />
-          Logout
+          {!isCollapsed && <span className="text-sm">{t("nav.logout")}</span>}
         </button>
       </div>
     </aside>

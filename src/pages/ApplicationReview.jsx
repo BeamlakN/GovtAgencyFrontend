@@ -1,33 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import {
-  cancelApplication,
-  reviewApplication,
-  getApplicationById,
-} from "@/api/transportService";
-import { toastError, toastSuccess } from "@/components/ui/toast";
-import { 
-  ArrowLeft, 
-  FileText, 
-  Download, 
-  X,
-  File,
-  FileImage,
-  FileArchive,
-  FileCode,
-  FileSpreadsheet,
-  FileCheck,
-  MessageSquare,
-  ChevronRight
-} from "lucide-react";
-import ReviewThread from "@/components/dashboard/ReviewThread";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Search, Filter, ArrowUpDown } from "lucide-react";
+import { getApplicationsGroupedByService, getApplicationsByType } from "@/api/transportService";
+import { toastError } from "@/components/ui/toast";
 
 const statusBadgeClass = (status) => {
   switch (status) {
     case "approved":
       return "bg-emerald-100 text-emerald-700";
-    case "paid":
-      return "bg-amber-100 text-amber-700";
     case "rejected":
       return "bg-red-100 text-red-700";
     case "submitted":
@@ -39,533 +19,278 @@ const statusBadgeClass = (status) => {
   }
 };
 
+const paymentStatusBadgeClass = (status) => {
+  switch (status?.toLowerCase()) {
+    case "paid":
+      return "bg-emerald-100 text-emerald-700";
+    case "pending":
+      return "bg-amber-100 text-amber-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
+
 const formatDate = (value) => {
   if (!value) return "N/A";
-  return new Date(value).toLocaleDateString(undefined, {
+  const date = new Date(value);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 };
 
-const getFileInfo = (filename) => {
-  const extension = filename?.split('.').pop()?.toLowerCase() || '';
-  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension);
-  const isPdf = extension === 'pdf';
-  const isWord = ['doc', 'docx'].includes(extension);
-  const isExcel = ['xls', 'xlsx', 'csv'].includes(extension);
-  const isArchive = ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension);
-  const isText = ['txt', 'md', 'json', 'xml', 'log'].includes(extension);
-  
-  return {
-    extension,
-    isImage,
-    isPdf,
-    isWord,
-    isExcel,
-    isArchive,
-    isText,
-    icon: isImage ? FileImage : isPdf ? FileCheck : isWord ? FileText : isExcel ? FileSpreadsheet : isArchive ? FileArchive : FileCode
-  };
-};
-
-const DocumentPreviewModal = ({ file, onClose }) => {
-  const [loading, setLoading] = useState(true);
-  const fileUrl = typeof file === 'string' ? file : file.url || file.path;
-  const fileName = typeof file === 'string' ? file.split('/').pop() : file.name || 'Document';
-  const { isImage, isPdf, extension } = getFileInfo(fileName);
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-slate-500" />
-            <h3 className="font-semibold text-slate-900">{fileName}</h3>
-            <span className="text-xs text-slate-500 uppercase">.{extension}</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <X className="h-5 w-5 text-slate-500" />
-          </button>
-        </div>
-        
-        <div className="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-          {isImage && (
-            <div className="flex justify-center items-center min-h-[400px]">
-              <img 
-                src={fileUrl} 
-                alt={fileName}
-                className="max-w-full h-auto rounded-lg shadow-md"
-                onLoad={() => setLoading(false)}
-                onError={() => setLoading(false)}
-              />
-            </div>
-          )}
-          
-          {isPdf && (
-            <iframe
-              src={`${fileUrl}#toolbar=1&navpanes=1`}
-              title={fileName}
-              className="w-full h-[80vh] rounded-lg border border-slate-200"
-              onLoad={() => setLoading(false)}
-            />
-          )}
-          
-          {!isImage && !isPdf && (
-            <div className="text-center py-12">
-              <File className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-600 mb-4">Preview not available for this file type</p>
-              <a
-                href={fileUrl}
-                download={fileName}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Download {fileName}
-              </a>
-            </div>
-          )}
-          
-          {loading && (isImage || isPdf) && (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const DocumentThumbnail = ({ file, onClick }) => {
-  const fileUrl = typeof file === 'string' ? file : file.url || file.path;
-  const fileName = typeof file === 'string' ? file.split('/').pop() : file.name || 'Document';
-  const { isImage, icon: Icon, extension } = getFileInfo(fileName);
-  const [thumbnailError, setThumbnailError] = useState(false);
-  
-  return (
-    <div 
-      className="group relative rounded-2xl border border-slate-200 bg-white hover:shadow-md transition-all cursor-pointer overflow-hidden"
-      onClick={onClick}
-    >
-      <div className="aspect-video bg-slate-50 flex items-center justify-center p-4">
-        {isImage && !thumbnailError ? (
-          <img 
-            src={fileUrl} 
-            alt={fileName}
-            className="max-w-full max-h-full object-contain"
-            onError={() => setThumbnailError(true)}
-          />
-        ) : (
-          <Icon className="h-12 w-12 text-slate-400" />
-        )}
-      </div>
-      
-      <div className="p-3 border-t border-slate-100">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">{fileName}</p>
-            <p className="text-xs text-slate-500 uppercase mt-0.5">{extension || 'file'}</p>
-          </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(fileUrl, '_blank');
-              }}
-              className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-              title="Download"
-            >
-              <Download className="h-4 w-4 text-slate-500" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default function ApplicationReview() {
-  const { id } = useParams();
+export default function Applications() {
+  const [searchParams] = useSearchParams();
+  const typeFromUrl = searchParams.get("type");
+  const [applications, setApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [dateSort, setDateSort] = useState("newest");
+  const [serviceName, setServiceName] = useState("");
+  const [serviceId, setServiceId] = useState(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const [application, setApplication] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [showCommentPanel, setShowCommentPanel] = useState(false);
-  const [rejectionNotes, setRejectionNotes] = useState("");
-  const [showRejectionModal, setShowRejectionModal] = useState(false);
-
-  const queryParams = new URLSearchParams(location.search);
-  const returnUrl = queryParams.get('returnTo');
-
-  const handleBack = () => {
-    if (returnUrl) {
-      navigate(returnUrl);
-    } else {
-      navigate("/applications");
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadApplication();
-  }, [id]);
-
-  const loadApplication = async () => {
-    try {
-      setLoading(true);
-      const data = await getApplicationById(id);
-      
-      let appData = data;
-      if (data?.data) {
-        appData = data.data;
+    const loadData = async () => {
+      if (!typeFromUrl) {
+        setLoading(false);
+        return;
       }
       
-      setApplication(appData);
-    } catch (err) {
-      console.error("Error loading application:", err);
-      toastError(err?.response?.data?.error || err.message || "Failed to load application.");
-      navigate("/applications");
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        const groupedData = await getApplicationsGroupedByService();
+        
+        const service = groupedData.find(s => 
+          s.service_name?.toLowerCase().replace(/ /g, "_") === typeFromUrl.toLowerCase() ||
+          s.service_id === typeFromUrl
+        );
+        
+        if (service) {
+          setServiceName(service.service_name);
+          setServiceId(service.service_id);
+          
+          const applicationsData = await getApplicationsByType(service.service_id);
+          
+          let apps = [];
+          if (Array.isArray(applicationsData)) {
+            apps = applicationsData;
+          } else if (applicationsData?.applications && Array.isArray(applicationsData.applications)) {
+            apps = applicationsData.applications;
+          } else if (applicationsData?.data && Array.isArray(applicationsData.data)) {
+            apps = applicationsData.data;
+          } else {
+            apps = [];
+          }
+          
+          setApplications(apps);
+          setFilteredApplications(apps);
+        } else {
+          setServiceName(typeFromUrl.replaceAll("_", " "));
+          setApplications([]);
+          setFilteredApplications([]);
+        }
+      } catch (err) {
+        console.error("Error loading applications:", err);
+        toastError(err?.response?.data?.error || err.message || "Failed to load applications.");
+        setApplications([]);
+        setFilteredApplications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getDocuments = (item) => {
-    if (!item) return [];
+    loadData();
+  }, [typeFromUrl]);
+
+  useEffect(() => {
+    let filtered = [...applications];
     
-    const documents = item.documents || item.attached_documents || item.files || item.attachments;
-    
-    if (Array.isArray(documents)) {
-      return documents.filter(doc => doc && doc.trim?.()?.length > 0);
+    if (searchTerm) {
+      filtered = filtered.filter(app => 
+        (app.citizen_name || app.applicant_name || "Citizen").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (app.citizen_fin || app.fin || "").includes(searchTerm)
+      );
     }
     
-    return [];
-  };
-
-  const handleApprove = async () => {
-    setActionLoading(true);
-    try {
-      // Correct payload structure for approval
-      const payload = {
-        appStatus: "approved",
-        deliveryStatus: "ready",
-        notes: "Application approved. All documents verified and requirements met.",
-        trackingNumber: null
-      };
-      
-      await reviewApplication(id, payload);
-      await loadApplication();
-      toastSuccess("Application approved successfully! Legal records and digital certificates have been updated automatically.");
-    } catch (err) {
-      toastError(err?.response?.data?.error || err.message || "Failed to approve application.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRejectSubmit = async () => {
-    if (!rejectionNotes.trim()) {
-      toastError("Please provide a reason for rejection.");
-      return;
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(app => 
+        (app.application_status || app.status || "").toLowerCase() === statusFilter.toLowerCase()
+      );
     }
     
-    setActionLoading(true);
-    try {
-      // Correct payload structure for rejection
-      const payload = {
-        appStatus: "rejected",
-        deliveryStatus: null,
-        notes: rejectionNotes,
-        trackingNumber: null
-      };
-      
-      await reviewApplication(id, payload);
-      await loadApplication();
-      setShowRejectionModal(false);
-      setRejectionNotes("");
-      toastSuccess("Application rejected successfully.");
-    } catch (err) {
-      toastError(err?.response?.data?.error || err.message || "Failed to reject application.");
-    } finally {
-      setActionLoading(false);
+    if (paymentFilter !== "all") {
+      filtered = filtered.filter(app => 
+        (app.payment_status || "").toLowerCase() === paymentFilter.toLowerCase()
+      );
     }
+    
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.submitted_at || 0);
+      const dateB = new Date(b.created_at || b.submitted_at || 0);
+      return dateSort === "newest" ? dateB - dateA : dateA - dateB;
+    });
+    
+    setFilteredApplications(filtered);
+  }, [searchTerm, statusFilter, paymentFilter, dateSort, applications]);
+
+  const handleReview = (applicationId) => {
+    sessionStorage.setItem(`app_${applicationId}_type`, typeFromUrl);
+    navigate(`/applications/${applicationId}/review?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
   };
 
-  const handleReject = () => {
-    setShowRejectionModal(true);
-  };
-
-  const handleCancel = async () => {
-    setActionLoading(true);
-    try {
-      await cancelApplication(id, "Cancelled by agency administration.");
-      await loadApplication();
-      toastSuccess("Application cancelled successfully!");
-    } catch (err) {
-      toastError(err?.response?.data?.error || err.message || "Failed to cancel application.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCommentAdded = (comment) => {
-    console.log("Comment added:", comment);
-    toastSuccess("New comment added!");
-  };
-
-  const handleCommentUpdated = (commentId, newText) => {
-    console.log("Comment updated:", commentId, newText);
-    toastSuccess("Comment updated successfully!");
-  };
-
-  const handleCommentDeleted = (commentId) => {
-    console.log("Comment deleted:", commentId);
-    toastSuccess("Comment deleted successfully!");
-  };
-
-  if (loading) {
+  if (!typeFromUrl) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4"></div>
-            <p className="text-slate-600">Loading application...</p>
-          </div>
+      <div className="p-6">
+        <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-8 text-center">
+          <p className="text-slate-500">Please select an application type from the sidebar.</p>
         </div>
       </div>
     );
   }
-
-  if (!application) {
-    return (
-      <div className="p-8">
-        <div className="text-center py-12">
-          <p className="text-slate-600">Application not found.</p>
-          <button
-            onClick={handleBack}
-            className="mt-4 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const documents = getDocuments(application);
 
   return (
-    <div className="p-8 space-y-6">
-      {previewFile && (
-        <DocumentPreviewModal 
-          file={previewFile} 
-          onClose={() => setPreviewFile(null)} 
-        />
-      )}
-      
-      {/* Rejection Modal */}
-      {showRejectionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowRejectionModal(false)}>
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Reject Application</h3>
-              <p className="text-sm text-slate-500 mb-4">Please provide a reason for rejecting this application.</p>
-              
-              <textarea
-                value={rejectionNotes}
-                onChange={(e) => setRejectionNotes(e.target.value)}
-                rows={4}
-                placeholder="Enter rejection reason..."
-                className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-900 outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400"
-                autoFocus
-              />
-              
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowRejectionModal(false)}
-                  className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRejectSubmit}
-                  disabled={actionLoading || !rejectionNotes.trim()}
-                  className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? "Processing..." : "Confirm Rejection"}
-                </button>
-              </div>
-            </div>
-          </div>
+    <div className="p-6">
+      {/* Search and Filter Bar */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by applicant name or FIN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+          />
         </div>
-      )}
-      
-      <div className="flex justify-end mb-3">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
+        
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+          >
+            <option value="all">All Status</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+          >
+            <option value="all">All Payment</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+
+        <div className="relative">
+          <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <select
+            value={dateSort}
+            onChange={(e) => setDateSort(e.target.value)}
+            className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
       </div>
 
-      <div className={`transition-all duration-300 ${showCommentPanel ? 'grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6' : 'block'}`}>
-        <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Applicant</p>
-                <p className="text-lg font-semibold text-slate-900">{application.citizen_name || "Citizen"}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(application.application_status)}`}>
-                  {application.application_status || "unknown"}
-                </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                  {application.payment_status || "payment unknown"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-4 border border-slate-200">
-                <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Service</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">{application.service_name || application.service_type || "N/A"}</p>
-                {application.service_description && (
-                  <p className="mt-1 text-xs text-slate-500 line-clamp-2">{application.service_description}</p>
-                )}
-              </div>
-              <div className="rounded-2xl bg-white p-4 border border-slate-200">
-                <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Submitted</p>
-                <p className="mt-2 text-sm text-slate-900">{formatDate(application.created_at)}</p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 border border-slate-200">
-                <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">Application ID</p>
-                <p className="mt-2 text-sm font-mono text-slate-900 truncate">{application.id}</p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 border border-slate-200">
-                <p className="text-xs text-slate-500 uppercase tracking-[0.2em]">FIN / ID</p>
-                <p className="mt-2 text-sm text-slate-900">{application.citizen_fin || "N/A"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 p-5">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <div>
-                <p className="text-sm text-slate-500 uppercase tracking-[0.2em]">Attached Documents</p>
-                <p className="mt-1 text-sm text-slate-700">Click on any document to preview its contents.</p>
-              </div>
-              <span className="text-xs font-medium text-slate-500">{documents.length} file(s)</span>
-            </div>
-            
-            {documents.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {documents.map((doc, index) => (
-                  <DocumentThumbnail 
-                    key={`${application.id}-doc-${index}`}
-                    file={doc}
-                    onClick={() => setPreviewFile(doc)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm text-slate-500">No documents attached for this application.</p>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 p-5 bg-slate-50">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Application Actions</p>
-                <p className="text-xs text-slate-500 mt-0.5">Review, decide, or add comments</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {application.application_status !== "approved" && (
-                  <button
-                    type="button"
-                    onClick={handleApprove}
-                    disabled={actionLoading}
-                    className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                  >
-                    {actionLoading ? "Processing..." : "✓ Approve"}
-                  </button>
-                )}
-                {application.application_status !== "rejected" && (
-                  <button
-                    type="button"
-                    onClick={handleReject}
-                    disabled={actionLoading}
-                    className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                  >
-                    {actionLoading ? "..." : "✗ Reject"}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={actionLoading}
-                  className="rounded-xl bg-slate-600 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                >
-                  {actionLoading ? "..." : "⊗ Cancel"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCommentPanel(!showCommentPanel)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors flex items-center gap-1 ${
-                    showCommentPanel 
-                      ? 'bg-slate-600 text-white hover:bg-slate-700' 
-                      : 'bg-slate-900 text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  {showCommentPanel ? "Close Comments" : "Add Comment"}
-                  <ChevronRight className={`h-4 w-4 transition-transform ${showCommentPanel ? 'rotate-90' : ''}`} />
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Results Summary */}
+      <div className="mb-4">
+        <div className="text-sm text-slate-500">
+          Showing {filteredApplications.length} of {applications.length} applications
         </div>
+      </div>
 
-        {showCommentPanel && (
-          <div className="animate-slide-in">
-            <ReviewThread
-              applicationId={application.id}
-              readOnly={false}
-              onCommentAdded={handleCommentAdded}
-              onCommentUpdated={handleCommentUpdated}
-              onCommentDeleted={handleCommentDeleted}
-            />
+      <section className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+        {loading && <p className="text-sm text-slate-500 p-8 text-center">Loading applications...</p>}
+        {!loading && filteredApplications.length === 0 && (
+          <div className="p-6 text-center">
+            <p className="text-sm text-slate-500">No {serviceName.toLowerCase()} applications found.</p>
           </div>
         )}
-      </div>
 
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        .animate-slide-in {
-          animation: slideIn 0.3s ease-out;
-        }
-      `}</style>
+        {!loading && filteredApplications.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50 text-slate-600 uppercase tracking-wide text-[11px]">
+                <tr>
+                  <th className="px-3 py-3 text-left">Applicant</th>
+                  <th className="px-3 py-3 text-left">Status</th>
+                  <th className="px-3 py-3 text-left">Payment</th>
+                  <th className="px-3 py-3 text-left">Submitted</th>
+                  <th className="px-3 py-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {filteredApplications.map((item) => {
+                  const submitDate = item.created_at || item.submitted_at;
+                  const isNew = submitDate && new Date(submitDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                  
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="font-medium text-slate-900">{item.citizen_name || item.applicant_name || "Citizen"}</div>
+                        <div className="text-xs text-slate-500">{item.citizen_fin || item.fin || "N/A"}</div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(item.application_status || item.status)}`}>
+                          {item.application_status || item.status || "unknown"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${paymentStatusBadgeClass(item.payment_status)}`}>
+                          {item.payment_status || "N/A"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-700">{formatDate(submitDate)}</span>
+                          {isNew && (
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              New
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleReview(item.id)}
+                          className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-sm hover:bg-slate-800 transition-colors"
+                        >
+                          Review
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -2,3 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Amharic / Ethiopic script */
+html.font-ethiopic body {
+  font-family: "Noto Sans Ethiopic", ui-sans-serif, system-ui, sans-serif;
+}
+

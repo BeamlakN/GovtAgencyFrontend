@@ -23,6 +23,7 @@ export default function StaffManagement() {
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [form, setForm] = useState(initialForm);
+  
   const user = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "null");
@@ -30,6 +31,7 @@ export default function StaffManagement() {
       return null;
     }
   }, []);
+
   const isSuperAdmin = user?.role === "super_admin";
   const [createFieldErrors, setCreateFieldErrors] = useState({});
   const [createLoading, setCreateLoading] = useState(false);
@@ -43,17 +45,9 @@ export default function StaffManagement() {
   const [suspendCandidate, setSuspendCandidate] = useState(null);
   const [locallyDeletedIds, setLocallyDeletedIds] = useState(() => new Set());
 
-  const getStaffId = (user) =>
-    user?.id ??
-    user?._id ??
-    user?.staff_id ??
-    user?.staffId ??
-    user?.user_id ??
-    user?.userId ??
-    "";
-
+  const getStaffId = (user) => user?.id ?? user?._id ?? user?.staff_id ?? user?.staffId ?? user?.user_id ?? user?.userId ?? "";
+  
   const getStaffStatus = (user) => {
-    // Check status from API response
     if (user?.status === "inactive") return "inactive";
     if (user?.status === "active") return "active";
     if (user?.is_active === false) return "inactive";
@@ -62,442 +56,306 @@ export default function StaffManagement() {
   };
 
   const isStaffInactive = (user) => getStaffStatus(user) === "inactive";
-  const getStaffDisplayStatus = (user) => isStaffInactive(user) ? "Suspended" : "Active";
 
   const loadStaff = async () => {
     try {
       const data = await getAgencyStaff();
-      console.log("Loaded staff data:", data);
       const list = Array.isArray(data) ? data : [];
-      // Filter out locally deleted staff
-      const filteredList = list.filter((u) => !locallyDeletedIds.has(getStaffId(u)));
-      setStaff(filteredList);
+      setStaff(list.filter((u) => !locallyDeletedIds.has(getStaffId(u))));
     } catch (err) {
       toastError(err?.response?.data?.error || err.message || "Failed to load staff.");
     }
   };
 
-  useEffect(() => {
-    loadStaff();
-  }, []);
+  useEffect(() => { loadStaff(); }, []);
 
   useEffect(() => {
     let filtered = [...staff];
-    
-    if (searchTerm) {
-      filtered = filtered.filter(u => 
-        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (filterRole !== "all") {
-      filtered = filtered.filter(u => u.role === filterRole);
-    }
-    
-    if (filterStatus !== "all") {
-      filtered = filtered.filter(u => 
-        filterStatus === "active" ? !isStaffInactive(u) : isStaffInactive(u)
-      );
-    }
-    
+    if (searchTerm) filtered = filtered.filter(u => u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || u.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (filterRole !== "all") filtered = filtered.filter(u => u.role === filterRole);
+    if (filterStatus !== "all") filtered = filtered.filter(u => filterStatus === "active" ? !isStaffInactive(u) : isStaffInactive(u));
     setFilteredStaff(filtered);
   }, [staff, searchTerm, filterRole, filterStatus]);
 
-const handleCreate = async (e) => {
-  if (!isSuperAdmin) return;
-  e.preventDefault();
-  setCreateLoading(true);
-  setCreateFieldErrors({});
-  
-  try {
-    // Try different payload structures
-    const payload = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      password: form.password,
-      role: "admin", // Add default role
-    };
+  const handleCreate = async (e) => {
+    if (!isSuperAdmin) {
+      toastError("Only super admins can create staff");
+      return;
+    }
     
-    console.log("📤 Sending create staff request:", payload);
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.password) {
+      toastError("All fields are required");
+      return;
+    }
     
-    const created = await createAgencyStaff(payload);
-    console.log("✅ Create staff response:", created);
+    setCreateLoading(true);
+    setCreateFieldErrors({});
     
-    setForm(initialForm);
-    setShowCreateForm(false);
-    toastSuccess("Staff account created successfully.");
-    await loadStaff();
-  } catch (error) {
-    console.error("❌ Create staff error:", error);
-    
-    // Try alternative payload structure
     try {
-      const altPayload = {
-        fullName: form.name.trim(),
+      await createAgencyStaff({
+        name: form.name.trim(),
         email: form.email.trim(),
         password: form.password,
-      };
-      console.log("📤 Trying alternative payload:", altPayload);
-      
-      const created = await createAgencyStaff(altPayload);
-      console.log("✅ Alternative payload success:", created);
+      });
       
       setForm(initialForm);
       setShowCreateForm(false);
-      toastSuccess("Staff account created successfully.");
+      toastSuccess("Staff account created successfully!");
       await loadStaff();
-    } catch (altError) {
-      console.error("❌ Alternative payload also failed:", altError);
-      const errorMessage = error?.response?.data?.error || error.message || "Failed to create staff account.";
-      toastError(errorMessage);
+    } catch (error) {
+      toastError(error?.response?.data?.error || "Failed to create staff account.");
+      if (error?.response?.data?.errors) setCreateFieldErrors(error.response.data.errors);
+    } finally {
+      setCreateLoading(false);
     }
-  } finally {
-    setCreateLoading(false);
-  }
-};
+  };
 
   const startEdit = (user) => {
     if (!isSuperAdmin) return;
     setShowCreateForm(false);
     setEditingId(getStaffId(user));
-    setEditForm({
-      name: user.name || "",
-      role: user.role || "admin",
-    });
+    setEditForm({ name: user.name || "", role: user.role || "admin" });
   };
 
-  const cancelEdit = () => {
-    setEditingId("");
-    setEditForm(initialEditForm);
-    setEditFieldErrors({});
-  };
+  const cancelEdit = () => { setEditingId(""); setEditForm(initialEditForm); setEditFieldErrors({}); };
 
   const handleUpdate = async (id) => {
     if (!isSuperAdmin) return;
     setEditLoading(true);
-    setEditFieldErrors({});
     try {
       await updateAgencyStaff(id, editForm);
-      toastSuccess("Staff details updated.");
+      toastSuccess("Staff updated.");
       cancelEdit();
       await loadStaff();
     } catch (err) {
-      const apiErrors = err?.response?.data?.errors;
-      if (apiErrors && typeof apiErrors === "object") setEditFieldErrors(apiErrors);
-      toastError(err?.response?.data?.error || err.message || "Failed to update staff details.");
-    } finally {
-      setEditLoading(false);
-    }
+      if (err?.response?.data?.errors) setEditFieldErrors(err.response.data.errors);
+      toastError(err?.response?.data?.error || "Failed to update.");
+    } finally { setEditLoading(false); }
   };
 
-  // Fix: Use setAgencyStaffStatus endpoint for suspend
   const handleSuspend = async (user) => {
-    if (!isSuperAdmin || !user) return;
     const id = getStaffId(user);
     setActionLoadingId(id);
-
     try {
-      // Send status as "inactive" for suspend
-      const response = await setAgencyStaffStatus(id, "inactive");
-      console.log("Suspend response:", response);
-      
-      toastSuccess(`Staff account suspended successfully.`);
-      
-      // IMPORTANT: Refresh the staff list to get the updated status
+      await setAgencyStaffStatus(id, "inactive");
+      toastSuccess("Staff suspended.");
       await loadStaff();
     } catch (err) {
-      console.error("Suspend error:", err);
-      toastError(err?.response?.data?.error || err.message || "Failed to suspend staff account.");
-    } finally {
-      setActionLoadingId("");
-    }
+      toastError("Failed to suspend.");
+    } finally { setActionLoadingId(""); }
   };
 
-  // Fix: Use setAgencyStaffStatus endpoint for activate
   const handleActivate = async (user) => {
-    if (!isSuperAdmin || !user) return;
     const id = getStaffId(user);
     setActionLoadingId(id);
-
     try {
-      // Send status as "active" for activate
-      const response = await setAgencyStaffStatus(id, "active");
-      console.log("Activate response:", response);
-      
-      toastSuccess(`Staff account activated successfully.`);
-      
-      // IMPORTANT: Refresh the staff list to get the updated status
+      await setAgencyStaffStatus(id, "active");
+      toastSuccess("Staff activated.");
       await loadStaff();
     } catch (err) {
-      console.error("Activate error:", err);
-      toastError(err?.response?.data?.error || err.message || "Failed to activate staff account.");
-    } finally {
-      setActionLoadingId("");
-    }
+      toastError("Failed to activate.");
+    } finally { setActionLoadingId(""); }
   };
 
-  const openSuspendModal = (user) => {
-    if (!isSuperAdmin || !user) return;
-    setSuspendCandidate(user);
-  };
-
-  const closeSuspendModal = () => {
-    setSuspendCandidate(null);
-  };
-
-  const confirmSuspend = async () => {
-    if (!suspendCandidate) return;
-    const user = suspendCandidate;
-    setSuspendCandidate(null);
-    await handleSuspend(user);
-  };
-
+  const openSuspendModal = (user) => { if (!isSuperAdmin || !user) return; setSuspendCandidate(user); };
+  
   const handleDelete = async (id) => {
-    if (!isSuperAdmin || !id) return;
     setActionLoadingId(id);
     try {
       await deleteAgencyStaff(id);
-      setLocallyDeletedIds((prev) => {
-        const next = new Set(prev);
-        next.add(id);
-        return next;
-      });
-      toastSuccess("Staff account removed.");
+      setLocallyDeletedIds(prev => new Set([...prev, id]));
+      toastSuccess("Staff removed.");
       await loadStaff();
     } catch (err) {
-      console.error("Delete error:", err);
-      toastError(err?.response?.data?.error || err.message || "Failed to remove staff.");
-    } finally {
-      setActionLoadingId("");
-    }
+      toastError("Failed to remove.");
+    } finally { setActionLoadingId(""); }
   };
 
   return (
-    <div className="p-8">
+    <div className="p-5 space-y-4 bg-slate-50 min-h-screen">
       {/* Search and Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-1 gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search staff..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-1 gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900" 
             />
           </div>
-          
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none cursor-pointer"
-            >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
-          </div>
-
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Suspended</option>
-            </select>
-          </div>
-        </div>
-
-        {isSuperAdmin && (
-          <button
-            type="button"
-            onClick={() => {
-              cancelEdit();
-              setShowCreateForm((prev) => !prev);
-            }}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2 hover:bg-slate-800 transition-colors"
+          <select 
+            value={filterRole} 
+            onChange={(e) => setFilterRole(e.target.value)} 
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
           >
-            <Plus size={16} />
-            {showCreateForm ? "Cancel" : "Create Staff"}
+            <option value="all">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)} 
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Suspended</option>
+          </select>
+        </div>
+        {isSuperAdmin && (
+          <button 
+            onClick={() => { cancelEdit(); setShowCreateForm(prev => !prev); }} 
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 text-white px-3 py-1.5 text-sm hover:bg-slate-800 transition-colors"
+          >
+            <Plus size={14} /> {showCreateForm ? "Cancel" : "Create Staff"}
           </button>
         )}
       </div>
 
       {!isSuperAdmin && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm mb-6">
-          Agency admins can view staff records. Only agency super admins can create, edit, suspend, or remove staff accounts.
+        <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
+          View only mode. Only super admins can manage staff members.
         </div>
       )}
 
-      <section className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+      {/* Staff Table */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <Table className="w-full">
-            <colgroup>
-              <col className="w-1/5" />
-              <col className="w-1/5" />
-              <col className="w-1/5" />
-              <col className="w-1/5" />
-              <col className="w-1/5" />
-            </colgroup>
-            <THead>
-              <TR className="text-left border-b border-slate-200 bg-slate-50">
-                <TH className="px-4 py-3">Name</TH>
-                <TH className="px-4 py-3">Email</TH>
-                <TH className="px-4 py-3">Role</TH>
-                <TH className="px-4 py-3">Status</TH>
-                <TH className="px-4 py-3">Actions</TH>
-              </TR>
-            </THead>
-            <TBody>
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold text-slate-600">Name</th>
+                <th className="px-3 py-2 text-left font-semibold text-slate-600">Email</th>
+                <th className="px-3 py-2 text-left font-semibold text-slate-600">Role</th>
+                <th className="px-3 py-2 text-left font-semibold text-slate-600">Status</th>
+                <th className="px-3 py-2 text-left font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
               {filteredStaff.map((user) => {
                 const userId = getStaffId(user);
                 const isInactive = isStaffInactive(user);
-                const uniqueKey = userId || `${user.email}-${Date.now()}`;
-                
                 return (
-                  <TR
-                    key={uniqueKey}
-                    className="border-b border-slate-100 align-top hover:bg-slate-50/60 transition-colors"
-                  >
-                    <TD className="px-4 py-3">
-                      <span className="font-medium text-slate-800">{user.name}</span>
-                    </TD>
-                    <TD className="px-4 py-3 text-slate-600">{user.email}</TD>
-                    <TD className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        user.role === "super_admin" ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-700"
+                  <tr key={userId || user.email} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-3 py-2">
+                      <span className="font-medium text-slate-900">{user.name}</span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{user.email}</td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        user.role === "super_admin" 
+                          ? "bg-indigo-100 text-indigo-700" 
+                          : "bg-slate-100 text-slate-700"
                       }`}>
                         {user.role === "super_admin" ? "Super Admin" : "Admin"}
                       </span>
-                    </TD>
-                    <TD className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                          isInactive
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        {getStaffDisplayStatus(user)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        isInactive 
+                          ? "bg-amber-100 text-amber-700" 
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {isInactive ? "Suspended" : "Active"}
                       </span>
-                    </TD>
-                    <TD className="px-4 py-3">
+                    </td>
+                    <td className="px-3 py-2">
                       {isSuperAdmin ? (
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(user)}
-                            disabled={actionLoadingId === userId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-100 disabled:opacity-50 transition-colors"
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={() => startEdit(user)} 
+                            disabled={actionLoadingId === userId} 
+                            className="p-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors"
                             title="Edit"
                           >
-                            <PencilLine size={14} />
+                            <PencilLine size={12} />
                           </button>
-                          
-                          {/* Suspend/Activate Button using setAgencyStaffStatus */}
                           {isInactive ? (
-                            <button
-                              type="button"
-                              onClick={() => handleActivate(user)}
-                              disabled={actionLoadingId === userId}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                            <button 
+                              onClick={() => handleActivate(user)} 
+                              disabled={actionLoadingId === userId} 
+                              className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                               title="Activate"
                             >
-                              <UserRoundCheck size={14} />
-                              Activate
+                              <UserRoundCheck size={12} />
                             </button>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => openSuspendModal(user)}
-                              disabled={actionLoadingId === userId}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
+                            <button 
+                              onClick={() => openSuspendModal(user)} 
+                              disabled={actionLoadingId === userId} 
+                              className="p-1 rounded bg-amber-600 text-white hover:bg-amber-700 transition-colors"
                               title="Suspend"
                             >
-                              <UserRoundCheck size={14} />
-                              Suspend
+                              <UserRoundCheck size={12} />
                             </button>
                           )}
-                          
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteCandidateId(userId);
-                            }}
-                            disabled={actionLoadingId === userId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-                            title="Remove"
+                          <button 
+                            onClick={() => setDeleteCandidateId(userId)} 
+                            disabled={actionLoadingId === userId} 
+                            className="p-1 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                            title="Delete"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={12} />
                           </button>
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-500">View only</span>
+                        <span className="text-xs text-slate-400">Read-only</span>
                       )}
-                    </TD>
-                  </TR>
+                    </td>
+                  </tr>
                 );
               })}
-            </TBody>
-          </Table>
-
-          {filteredStaff.length === 0 && (
-            <p className="text-sm text-slate-500 py-8 text-center">No staff found.</p>
-          )}
+              {filteredStaff.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-6 text-slate-500">No staff members found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </section>
+      </div>
 
-      <ConfirmDeleteModal
-        isOpen={!!deleteCandidateId}
-        title="Remove staff account?"
-        description="This action will permanently remove this staff member."
-        loading={actionLoadingId === deleteCandidateId}
-        onCancel={() => setDeleteCandidateId("")}
-        onConfirm={async () => {
-          const id = deleteCandidateId;
-          setDeleteCandidateId("");
-          await handleDelete(id);
-        }}
+      <ConfirmDeleteModal 
+        isOpen={!!deleteCandidateId} 
+        title="Remove staff member?" 
+        description="This action will permanently remove this user from the system." 
+        loading={actionLoadingId === deleteCandidateId} 
+        onCancel={() => setDeleteCandidateId("")} 
+        onConfirm={async () => { const id = deleteCandidateId; setDeleteCandidateId(""); await handleDelete(id); }} 
       />
-
-      <ConfirmDeleteModal
-        isOpen={Boolean(suspendCandidate)}
-        title="Suspend staff account?"
-        description={`Are you sure you want to suspend "${suspendCandidate?.name || suspendCandidate?.email || "this staff account"}"? Suspended staff cannot access the system.`}
-        confirmText="Suspend"
-        loading={actionLoadingId === getStaffId(suspendCandidate)}
-        onCancel={closeSuspendModal}
-        onConfirm={confirmSuspend}
+      
+      <ConfirmDeleteModal 
+        isOpen={Boolean(suspendCandidate)} 
+        title="Suspend staff?" 
+        description={`Are you sure you want to suspend "${suspendCandidate?.name}"?`} 
+        confirmText="Suspend" 
+        loading={actionLoadingId === getStaffId(suspendCandidate)} 
+        onCancel={() => setSuspendCandidate(null)} 
+        onConfirm={async () => { const user = suspendCandidate; setSuspendCandidate(null); await handleSuspend(user); }} 
       />
-
-      <StaffCreateModal
-        isOpen={isSuperAdmin && showCreateForm}
-        form={form}
-        setForm={setForm}
-        fieldErrors={createFieldErrors}
-        loading={createLoading}
-        onClose={() => setShowCreateForm(false)}
-        onSubmit={handleCreate}
+      
+      <StaffCreateModal 
+        isOpen={isSuperAdmin && showCreateForm} 
+        form={form} 
+        setForm={setForm} 
+        fieldErrors={createFieldErrors} 
+        loading={createLoading} 
+        onClose={() => setShowCreateForm(false)} 
+        onSubmit={handleCreate} 
       />
-
-      <StaffEditModal
-        editingId={editingId}
-        editForm={editForm}
-        setEditForm={setEditForm}
-        fieldErrors={editFieldErrors}
-        loading={editLoading}
-        onClose={cancelEdit}
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleUpdate(editingId);
-        }}
+      
+      <StaffEditModal 
+        editingId={editingId} 
+        editForm={editForm} 
+        setEditForm={setEditForm} 
+        fieldErrors={editFieldErrors} 
+        loading={editLoading} 
+        onClose={cancelEdit} 
+        onSubmit={(e) => { e.preventDefault(); handleUpdate(editingId); }} 
       />
     </div>
   );

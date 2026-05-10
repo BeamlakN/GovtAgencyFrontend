@@ -80,7 +80,6 @@ export default function ServicesManagement() {
     if (!form.name.trim()) nextErrors.name = "Service name is required.";
     else if (form.name.trim().length < 3) nextErrors.name = "Service name must be at least 3 characters.";
     
-    // Check for duplicate service name
     const isDuplicate = services.some(
       service => (service.name || service.service_name || "").toLowerCase() === form.name.toLowerCase()
     );
@@ -90,7 +89,6 @@ export default function ServicesManagement() {
     
     if (!form.description.trim()) nextErrors.description = "Description is required.";
     else if (form.description.trim().length < 10) nextErrors.description = "Description must be at least 10 characters.";
-    // Check if description is only numbers
     else if (/^\d+$/.test(form.description.trim())) {
       nextErrors.description = "Description cannot contain only numbers. Please add meaningful text.";
     }
@@ -99,10 +97,7 @@ export default function ServicesManagement() {
     else if (Number(form.fee) < 0) nextErrors.fee = "Base fee cannot be negative.";
     
     if (form.docs.trim()) {
-      const docsArray = form.docs
-        .split(",")
-        .map((d) => d.trim())
-        .filter(Boolean);
+      const docsArray = form.docs.split(",").map(d => d.trim()).filter(Boolean);
       if (docsArray.length === 0) nextErrors.docs = "Provide valid document names separated by commas.";
     }
     
@@ -119,10 +114,7 @@ export default function ServicesManagement() {
         name: form.name,
         description: form.description,
         fee: Number(form.fee || 0),
-        docs: form.docs
-          .split(",")
-          .map((d) => d.trim())
-          .filter(Boolean),
+        docs: form.docs.split(",").map(d => d.trim()).filter(Boolean),
       });
 
       setForm(initialForm);
@@ -172,7 +164,6 @@ export default function ServicesManagement() {
 
   const handleConfirmDelete = async () => {
     if (!serviceToDelete) return;
-    
     const id = getServiceId(serviceToDelete);
     if (!id) {
       toastError("Unable to delete: missing service id.");
@@ -181,7 +172,6 @@ export default function ServicesManagement() {
     }
 
     setDeleteLoading(true);
-
     try {
       await deleteTransportService(id);
       toastSuccess("Service deleted.");
@@ -211,10 +201,7 @@ export default function ServicesManagement() {
         name: editForm.name,
         description: editForm.description,
         fee: Number(editForm.fee || 0),
-        docs: editForm.docs
-          .split(",")
-          .map((d) => d.trim())
-          .filter(Boolean),
+        docs: editForm.docs.split(",").map(d => d.trim()).filter(Boolean),
       });
       toastSuccess("Service updated.");
       window.dispatchEvent(new Event(SERVICES_UPDATED_EVENT));
@@ -234,26 +221,26 @@ export default function ServicesManagement() {
   };
 
   return (
-    <div className="p-8">
-      {/* Search Bar - Create button removed */}
-      <div className="relative max-w-md mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <div className="p-5 space-y-4">
+      {/* Search Bar */}
+      <div className="relative max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           placeholder="Search services..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
       {!canManageServices && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm mb-6">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-3 py-2 text-xs">
           You do not have permission to manage service types.
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {filteredServices.map((service) => (
           <ServiceCard
             key={getServiceId(service) || service.service_name || service.name}
@@ -264,13 +251,10 @@ export default function ServicesManagement() {
           />
         ))}
         {filteredServices.length === 0 && (
-          <p className="text-sm text-slate-500 col-span-full text-center py-8">
-            No services found.
-          </p>
+          <p className="text-sm text-slate-500 col-span-full text-center py-6">No services found.</p>
         )}
       </div>
 
-      {/* ServiceCreateModal is kept but the button to open it is removed */}
       <ServiceCreateModal
         isOpen={canManageServices && showCreateForm}
         form={form}
