@@ -6,6 +6,7 @@ import {
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getTransportServices } from "@/api/transportService";
+import Logo from "@/assets/logo.png"; 
 
 const SERVICES_UPDATED_EVENT = "agency-services-updated";
 
@@ -85,17 +86,24 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
     <aside className={`fixed top-0 left-0 h-full bg-slate-900 text-slate-100 border-r border-slate-800 flex flex-col z-30 transition-all duration-300 ${
       isCollapsed ? "w-16" : "w-64"
     }`}>
-      {/* Logo Section */}
-      <div className={`mb-6 text-center pt-5 flex-shrink-0 ${isCollapsed ? "px-2" : "px-3"}`}>
-        <div className={`mx-auto rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center transition-all ${
-          isCollapsed ? "h-10 w-10" : "h-12 w-12"
-        }`}>
-          <Building2 size={isCollapsed ? 20 : 24} className="text-slate-200" />
-        </div>
-        {!isCollapsed && (
-          <h1 className="text-xs font-semibold mt-2">{t("nav.brand")}</h1>
-        )}
-      </div>
+     {/* Logo Section */}
+<div className={`mb-4 text-center pt-5 flex-shrink-0 ${isCollapsed ? "px-2" : "px-3"}`}>
+  <div className={`mx-auto flex items-center justify-center transition-all overflow-hidden ${
+    isCollapsed ? "h-10 w-10" : "h-20 w-20" 
+  }`}>
+    {/* REPLACED Building2 with img */}
+    <img 
+      src={Logo} 
+      alt="Agency Logo" 
+      className="h-full w-full object-contain"
+    />
+  </div>
+  {!isCollapsed && (
+    <h1 className="text-[10px] font-bold mt-2 uppercase tracking-tight text-slate-400">
+      {t("nav.brand")}
+    </h1>
+  )}
+</div>
 
       {/* Toggle Button */}
       <button
