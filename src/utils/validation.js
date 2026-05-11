@@ -10,7 +10,7 @@ export const PATTERNS = {
   EMAIL: /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/,
   
   // Password pattern (at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)
-  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+ PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/,
   
   // Phone patterns
   ETHIOPIA_PHONE: /^(09|07)[0-9]{8}$/,

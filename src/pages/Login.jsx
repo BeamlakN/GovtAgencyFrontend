@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 
+// Import your logo image here
+import Logo from "@/assets/logo.png"; 
+
 export default function Login() {
   const { t, i18n } = useTranslation();
   const [email, setEmail] = useState("");
@@ -235,7 +238,6 @@ export default function Login() {
       
       setForgotEmail("");
       
-      // Auto close after 3 seconds on success
       setTimeout(() => {
         setShowForgot(false);
         setForgotMessage("");
@@ -243,7 +245,6 @@ export default function Login() {
       }, 3000);
       
     } catch (err) {
-      console.error("Forgot password error:", err);
       setForgotError(err.message || t("login.forgotFailed"));
     } finally {
       setForgotLoading(false);
@@ -263,6 +264,7 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-slate-800 px-4 py-8">
+      {/* Language Switcher */}
       <div className="absolute top-4 end-4 flex items-center gap-2">
         <label htmlFor="login-lang" className="sr-only">{t("login.languageLabel")}</label>
         <select
@@ -278,11 +280,16 @@ export default function Login() {
 
       <div className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-lg p-6">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 mx-auto bg-slate-900 rounded-xl flex items-center justify-center mb-3">
-            <span className="text-white text-lg">🏛️</span>
+          {/* Logo Section */}
+          <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src={Logo} 
+              alt="DVCLA Logo" 
+              className="max-h-full max-w-full object-contain" 
+            />
           </div>
 
-          <h1 className="text-lg font-semibold text-slate-900">
+          <h1 className="text-lg font-bold text-slate-900">
             {t("login.title")}
           </h1>
 
@@ -370,7 +377,7 @@ export default function Login() {
               <p className="text-red-600 text-xs mt-1 ml-1">{passwordError}</p>
             )}
             {!passwordError && password && (
-              <p className="text-green-600 text-xs mt-1 ml-1 flex items-center gap-1">
+              <p className="text-green-600 text-xs mt-1 ml-1 flex items-center gap-1 font-medium">
                 ✓ {t("login.passwordOk")}
               </p>
             )}
@@ -380,14 +387,14 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setShowForgot(true)}
-              className="text-sm text-slate-600 hover:text-slate-800 hover:underline transition-all"
+              className="text-sm font-medium text-slate-600 hover:text-slate-800 hover:underline transition-all"
               disabled={!!lockoutTime}
             >
               {t("login.forgotPassword")}
             </button>
             
             {attempts > 0 && !lockoutTime && (
-              <span className="text-xs text-amber-400">
+              <span className="text-xs font-bold text-amber-500">
                 {t("login.attemptsLeftShort", { count: MAX_ATTEMPTS - attempts })}
               </span>
             )}
@@ -396,10 +403,10 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading || !!lockoutTime}
-            className={`w-full font-semibold py-2.5 rounded-lg transition-all text-sm ${
+            className={`w-full font-bold py-2.5 rounded-lg transition-all text-sm ${
               loading || lockoutTime
                 ? "bg-slate-400 cursor-not-allowed"
-                : "bg-slate-900 hover:bg-slate-800"
+                : "bg-slate-900 hover:bg-slate-800 shadow-sm"
             } text-white`}
           >
             {loading ? (
@@ -415,30 +422,30 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="text-xs text-center text-slate-400 mt-6">
+        <p className="text-xs text-center text-slate-400 mt-6 font-medium">
           {t("login.copyright")}
         </p>
       </div>
 
       {/* Forgot Password Modal */}
       {showForgot && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl w-full max-w-sm border border-slate-200 shadow-2xl">
-            <h2 className="text-slate-900 text-base font-semibold mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-8 rounded-2xl w-full max-w-sm border border-slate-200 shadow-2xl">
+            <h2 className="text-slate-900 text-lg font-bold mb-4">
               {t("login.resetPassword")}
             </h2>
             
-            <p className="text-slate-600 text-sm mb-4">
+            <p className="text-slate-600 text-sm mb-6 leading-relaxed">
               {t("login.resetDescription")}
             </p>
 
             <input
               type="email"
               placeholder={t("login.emailPlaceholder")}
-              className={`w-full p-3 rounded-lg text-slate-900 outline-none focus:ring-2 transition-all ${
+              className={`w-full p-3 rounded-xl text-slate-900 outline-none focus:ring-2 transition-all font-medium ${
                 forgotError
                   ? "border-red-300 focus:ring-red-500 bg-red-50"
-                  : "border border-slate-200 focus:ring-slate-900 bg-white"
+                  : "border border-slate-200 focus:ring-slate-900 bg-white shadow-sm"
               }`}
               value={forgotEmail}
               onChange={(e) => {
@@ -449,25 +456,24 @@ export default function Login() {
             />
             
             {forgotError && (
-              <p className="text-red-600 text-xs mt-2">{forgotError}</p>
+              <p className="text-red-600 text-xs mt-2 font-bold">{forgotError}</p>
             )}
             
             {forgotMessage && (
-              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-600 text-sm">{forgotMessage}</p>
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-green-600 text-sm font-bold">{forgotMessage}</p>
               </div>
             )}
 
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 mt-8">
               <button
                 onClick={handleForgotPassword}
                 disabled={forgotLoading}
-                className="flex-1 bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
                 {forgotLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    {t("login.sending")}
                   </div>
                 ) : (
                   t("login.sendResetLink")
@@ -481,7 +487,7 @@ export default function Login() {
                   setForgotError("");
                   setForgotEmail("");
                 }}
-                className="flex-1 bg-slate-200 text-slate-700 py-2 rounded-lg hover:bg-slate-300 transition-colors"
+                className="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition-colors"
               >
                 {t("common.cancel")}
               </button>
