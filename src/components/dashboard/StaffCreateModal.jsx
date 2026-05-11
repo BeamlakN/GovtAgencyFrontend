@@ -167,7 +167,7 @@ export default function StaffCreateModal({
                       <span>{passwordReqs.hasNumber ? "✓" : "○"}</span> Number
                     </div>
                     <div className={`col-span-2 flex items-center gap-0.5 sm:gap-1 ${passwordReqs.hasSpecialChar ? "text-green-600" : "text-slate-400"}`}>
-                      <span>{passwordReqs.hasSpecialChar ? "✓" : "○"}</span> Special char (@$!%*?&)
+                      <span>{passwordReqs.hasSpecialChar ? "✓" : "○"}</span> Special character
                     </div>
                   </div>
                 </div>

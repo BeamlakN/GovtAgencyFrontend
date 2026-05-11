@@ -184,6 +184,11 @@ export const getApplicationById = async (id) => {
   return unwrapResponse(res);
 };
 
+export const getApplicationDocuments = async (id) => {
+  const res = await API.get(`admin/agency/applications/${id}/documents`);
+  return unwrapResponse(res);
+};
+
 export const reviewApplication = async (id, payload) => {
   const res = await API.post(`admin/agency/review/${id}`, payload);
   return unwrapResponse(res);

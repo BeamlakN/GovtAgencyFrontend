@@ -3,14 +3,14 @@
 // Common regex patterns
 export const PATTERNS = {
   // Name patterns - No spaces at start/end, single spaces between words
-  NAME: /^[a-zA-Z]+(?: [a-zA-Z]+)*$/,
-  FULL_NAME: /^[a-zA-Z]+(?: [a-zA-Z]+)*$/,
+  NAME: /^[a-zA-Z]+(?:[ '-][a-zA-Z]+)*$/,
+  FULL_NAME: /^[a-zA-Z]+(?:[ '-][a-zA-Z]+)*$/,
   
   // Email pattern - No spaces
   EMAIL: /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/,
   
   // Password pattern (at least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)
-  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d\s])[^\s]{8,}$/,
   
   // Phone patterns
   ETHIOPIA_PHONE: /^(09|07)[0-9]{8}$/,
@@ -125,7 +125,7 @@ export const getPasswordStrength = (password) => {
   if (/(?=.*[a-z])/.test(password)) score++;
   if (/(?=.*[A-Z])/.test(password)) score++;
   if (/(?=.*\d)/.test(password)) score++;
-  if (/(?=.*[@$!%*?&])/.test(password)) score++;
+  if (/(?=.*[^a-zA-Z\d\s])/.test(password)) score++;
   
   if (score <= 2) return { score, label: "Weak", color: "text-red-500" };
   if (score <= 4) return { score, label: "Medium", color: "text-yellow-500" };
@@ -139,7 +139,7 @@ export const getPasswordRequirements = (password) => {
     hasLowercase: /(?=.*[a-z])/.test(password),
     hasUppercase: /(?=.*[A-Z])/.test(password),
     hasNumber: /(?=.*\d)/.test(password),
-    hasSpecialChar: /(?=.*[@$!%*?&])/.test(password),
+    hasSpecialChar: /(?=.*[^a-zA-Z\d\s])/.test(password),
     noSpaces: password && !/\s/.test(password),
   };
 };
@@ -165,7 +165,7 @@ export const VALIDATION_RULES = {
       required: { value: true, message: "Password is required" },
       minLength: { value: 8, message: "Password must be at least 8 characters" },
       maxLength: { value: 64, message: "Password must not exceed 64 characters" },
-      pattern: { value: PATTERNS.PASSWORD, message: "Password must contain uppercase, lowercase, number, and special character (@$!%*?&)" },
+      pattern: { value: PATTERNS.PASSWORD, message: "Password must contain uppercase, lowercase, number, and special character" },
       noSpaces: { value: true },
     },
   },
@@ -226,7 +226,7 @@ export const VALIDATION_RULES = {
       required: { value: true, message: "New password is required" },
       minLength: { value: 8, message: "Password must be at least 8 characters" },
       maxLength: { value: 64, message: "Password must not exceed 64 characters" },
-      pattern: { value: PATTERNS.PASSWORD, message: "Password must contain uppercase, lowercase, number, and special character (@$!%*?&)" },
+      pattern: { value: PATTERNS.PASSWORD, message: "Password must contain uppercase, lowercase, number, and special character" },
       noSpaces: { value: true },
     },
   },

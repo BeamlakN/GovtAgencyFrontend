@@ -1,10 +1,9 @@
-import { CheckCircle, Edit2, XCircle, Image as ImageIcon } from "lucide-react";
+import { Edit2, Trash2, Image as ImageIcon } from "lucide-react";
 
 export default function AnnouncementCard({
   announcement,
   onEdit,
-  onDeactivate,
-  onReactivate,
+  onDelete,
 }) {
   return (
     <div className="group rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md overflow-hidden">
@@ -55,25 +54,14 @@ export default function AnnouncementCard({
             <span>Edit</span>
           </button>
 
-          {announcement.is_active ? (
-            <button
-              type="button"
-              onClick={onDeactivate}
-              className="inline-flex items-center gap-1 rounded-lg sm:rounded-xl bg-amber-600 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold text-white hover:bg-amber-700 transition-colors"
-            >
-              <XCircle size={10} className="sm:w-[11px] sm:h-[11px]" /> 
-              <span>Deactivate</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onReactivate}
-              className="inline-flex items-center gap-1 rounded-lg sm:rounded-xl bg-emerald-600 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold text-white hover:bg-emerald-700 transition-colors"
-            >
-              <CheckCircle size={10} className="sm:w-[11px] sm:h-[11px]" /> 
-              <span>Reactivate</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex items-center gap-1 rounded-lg sm:rounded-xl bg-red-600 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold text-white hover:bg-red-700 transition-colors"
+          >
+            <Trash2 size={10} className="sm:w-[11px] sm:h-[11px]" /> 
+            <span>Delete</span>
+          </button>
         </div>
       </div>
     </div>
